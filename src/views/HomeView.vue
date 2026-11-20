@@ -136,21 +136,26 @@ function syncDotAnimation(now: number) {
 
 function spawnPal(index: number, now: number) {
   const origin = getDotOrigin()
-  // burst upward/out from the enlarged dot
-  const angle = rand((-Math.PI * 5) / 6, -Math.PI / 6)
-  const speed = rand(4.2, 7.2)
   const state = palState[index]
   state.alive = true
   state.caught = false
   state.x = origin.x
   state.y = origin.y
-  state.vx = Math.cos(angle) * speed + rand(-0.6, 0.6)
-  state.vy = Math.sin(angle) * speed
-  state.rot = rand(-24, 24)
-  state.vr = rand(-5, 5)
-  state.scale = 0.15
+  // shoot mostly upward from the enlarged dot, then arc out
+  state.vx = rand(-2.8, 2.8)
+  state.vy = rand(-10.5, -7.2)
+  state.rot = rand(-30, 30)
+  state.vr = rand(-6, 6)
+  state.scale = 0.06
   state.opacity = 0
   state.bornAt = now
+
+  const node = palNodes[index]
+  if (node) {
+    node.style.visibility = 'visible'
+    node.style.opacity = '0'
+    node.style.transform = `translate3d(${origin.x}px, ${origin.y}px, 0) translate(-50%, -50%) scale(0.06)`
+  }
 }
 
 const contact = {
@@ -297,6 +302,28 @@ const footerCols = [
 let menuCloseTimer = 0
 let heroTimer = 0
 let revealObserver: IntersectionObserver | null = null
+let autoHoverObserver: IntersectionObserver | null = null
+let autoHoverTimer = 0
+const activeAutoSections = new Set<HTMLElement>()
+const autoHoverIndex = new WeakMap<HTMLElement, number>()
+
+function clearSectionAutoHover(section: HTMLElement) {
+  section.querySelectorAll('.is-auto-hover').forEach((el) => el.classList.remove('is-auto-hover'))
+}
+
+function tickAutoHover() {
+  activeAutoSections.forEach((section) => {
+    const sel = section.dataset.autoHover
+    if (!sel) return
+    const items = Array.from(section.querySelectorAll<HTMLElement>(sel))
+    if (!items.length) return
+    const prev = autoHoverIndex.get(section) ?? -1
+    items.forEach((el) => el.classList.remove('is-auto-hover'))
+    const next = (prev + 1) % items.length
+    items[next].classList.add('is-auto-hover')
+    autoHoverIndex.set(section, next)
+  })
+}
 
 function onPointerMove(event: PointerEvent) {
   mouse.x = event.clientX
@@ -359,16 +386,26 @@ function tickPals(now: number) {
   cursorPals.forEach((pal, i) => {
     const state = palState[i]
     const node = palNodes[i]
-    if (!state.alive || !node) return
+    if (!node) return
+
+    // not spawned yet — stay fully hidden
+    if (!state.alive) {
+      node.style.visibility = 'hidden'
+      node.style.opacity = '0'
+      node.style.transform = 'translate3d(-9999px, -9999px, 0) scale(0)'
+      return
+    }
 
     const age = now - state.bornAt
-    if (age < 320) {
-      const p = age / 320
-      state.opacity = Math.min(1, 0.2 + p * 1.1)
-      // pop out of the dot: tiny → overshoot → settle
-      state.scale = 0.12 + Math.sin(Math.min(1, p * 1.15) * Math.PI) * 1.05
+    const launching = age < 480
+    if (launching) {
+      const p = Math.min(1, age / 480)
+      state.opacity = Math.min(1, p * 1.35)
+      // bounce pop while flying up
+      const pop = Math.sin(p * Math.PI)
+      state.scale = 0.08 + pop * 1.12
     } else {
-      state.opacity += (1 - state.opacity) * 0.12
+      state.opacity += (1 - state.opacity) * 0.14
     }
 
     if (state.caught && mouse.active) {
@@ -384,7 +421,8 @@ function tickPals(now: number) {
       state.rot += (Math.sin(t * 1.2 + i) * 5 - state.rot) * 0.08
       state.scale += (1 - state.scale) * 0.14
     } else {
-      state.vy += 0.045 * dt
+      // lighter gravity while launching upward, then normal bounce
+      state.vy += (launching ? 0.028 : 0.055) * dt
       state.x += state.vx * dt
       state.y += state.vy * dt
       state.rot += state.vr * dt
@@ -405,21 +443,23 @@ function tickPals(now: number) {
         state.vx += rand(-0.4, 0.4)
       }
 
-      const speed = Math.hypot(state.vx, state.vy)
-      if (speed < 1.6) {
-        const boost = rand(1.8, 3.2) / Math.max(0.2, speed)
-        state.vx *= boost
-        state.vy *= boost
-      } else if (speed > 7.5) {
-        state.vx *= 0.96
-        state.vy *= 0.96
+      if (!launching) {
+        const speed = Math.hypot(state.vx, state.vy)
+        if (speed < 1.6) {
+          const boost = rand(1.8, 3.2) / Math.max(0.2, speed)
+          state.vx *= boost
+          state.vy *= boost
+        } else if (speed > 8.5) {
+          state.vx *= 0.96
+          state.vy *= 0.96
+        }
+        state.scale += (1 + Math.sin(t * 5 + i) * 0.07 - state.scale) * 0.1
       }
-
-      state.scale += (1 + Math.sin(t * 5 + i) * 0.07 - state.scale) * 0.1
     }
 
+    node.style.visibility = 'visible'
     node.style.opacity = String(Math.max(0, Math.min(1, state.opacity)))
-    node.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) translate(-50%, -50%) rotate(${state.rot}deg) scale(${Math.max(0.2, state.scale)})`
+    node.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) translate(-50%, -50%) rotate(${state.rot}deg) scale(${Math.max(0.05, state.scale)})`
     node.classList.toggle('is-follow', state.caught)
   })
 
@@ -523,6 +563,27 @@ onMounted(() => {
     )
     revealEls.forEach((el) => revealObserver?.observe(el))
   }
+
+  if (!palsReduceMotion) {
+    const autoSections = document.querySelectorAll<HTMLElement>('[data-auto-hover]')
+    autoHoverObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const section = entry.target as HTMLElement
+          if (entry.isIntersecting) {
+            activeAutoSections.add(section)
+          } else {
+            activeAutoSections.delete(section)
+            clearSectionAutoHover(section)
+            autoHoverIndex.delete(section)
+          }
+        }
+      },
+      { threshold: 0.28, rootMargin: '-10% 0px -10% 0px' },
+    )
+    autoSections.forEach((section) => autoHoverObserver?.observe(section))
+    autoHoverTimer = window.setInterval(tickAutoHover, 1000)
+  }
 })
 
 onUnmounted(() => {
@@ -534,7 +595,9 @@ onUnmounted(() => {
   window.cancelAnimationFrame(palsRaf)
   window.clearTimeout(menuCloseTimer)
   window.clearInterval(heroTimer)
+  window.clearInterval(autoHoverTimer)
   revealObserver?.disconnect()
+  autoHoverObserver?.disconnect()
   document.body.classList.remove('menu-open')
 })
 </script>
@@ -693,7 +756,7 @@ onUnmounted(() => {
       </section>
 
       <!-- WORK TYPES -->
-      <section id="template-list" class="templates">
+      <section id="template-list" class="templates" data-auto-hover=".tpl-card">
         <div class="tpl-inner">
           <div class="tpl-head bounce-in">
             <h2>이런 사이트를<br />만듭니다</h2>
@@ -719,7 +782,7 @@ onUnmounted(() => {
       </section>
 
       <!-- FOCUS AREAS -->
-      <section class="sec brands">
+      <section class="sec brands" data-auto-hover=".brand-card">
         <div class="sec-head light bounce-in">
           <h2>우리가<br />잘하는 일</h2>
           <a class="more" href="#services">서비스 보기</a>
@@ -742,7 +805,7 @@ onUnmounted(() => {
       </section>
 
       <!-- SERVICES -->
-      <section id="services" class="easy">
+      <section id="services" class="easy" data-auto-hover=".easy-card">
         <div class="easy-rail">
           <h2 class="easy-title bounce-in">
             서비스<br />안내
@@ -765,7 +828,7 @@ onUnmounted(() => {
       </section>
 
       <!-- PROCESS -->
-      <section id="process" class="sec process">
+      <section id="process" class="sec process" data-auto-hover=".process-list > li">
         <div class="sec-head light bounce-in">
           <h2>진행 과정</h2>
           <p>문의부터 오픈까지<br />함께 진행합니다</p>
@@ -785,7 +848,7 @@ onUnmounted(() => {
       </section>
 
       <!-- ABOUT -->
-      <section id="systems" class="about">
+      <section id="systems" class="about" data-auto-hover=".about-points > li">
         <div class="about-inner">
           <div class="about-copy bounce-in">
             <p class="about-kicker">About</p>
@@ -813,7 +876,7 @@ onUnmounted(() => {
       </section>
 
       <!-- CTA -->
-      <section class="cta bounce-in">
+      <section class="cta bounce-in" data-auto-hover=".btn-start">
         <h2>홈페이지·반응형 웹이 필요하시면<br />편하게 문의해 주세요</h2>
         <a class="btn-start" :href="`mailto:${contact.email}`">상담 문의</a>
       </section>
@@ -907,9 +970,12 @@ onUnmounted(() => {
   left: 0;
   display: grid;
   place-items: center;
+  visibility: hidden;
+  opacity: 0;
   will-change: transform, opacity;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.12));
   transition: filter 0.3s ease;
+  pointer-events: none;
 }
 .cursor-pals.follow .cursor-pal {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
@@ -1455,7 +1521,7 @@ onUnmounted(() => {
 
 /* ——— HERO (white, full-bleed marquee) ——— */
 .hero {
-  --ring-z: -56vw;
+  --ring-z: -88vw;
   position: relative;
   width: 100%;
   min-height: 100svh;
@@ -1540,10 +1606,10 @@ onUnmounted(() => {
 .hero-ring {
   position: absolute;
   left: 0;
-  top: 48%;
+  top: 46%;
   width: 100%;
-  height: clamp(180px, 28vw, 340px);
-  perspective: 880px;
+  height: clamp(360px, 56vw, 680px);
+  perspective: 1200px;
   overflow-x: clip;
   overflow-y: visible;
   pointer-events: none;
@@ -1559,11 +1625,11 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: clamp(220px, 28vw, 400px);
-  height: clamp(140px, 18vw, 260px);
-  border-radius: 14px;
+  width: clamp(440px, 56vw, 800px);
+  height: clamp(280px, 36vw, 520px);
+  border-radius: 18px;
   border: 2px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.14);
   background-size: cover;
   background-position: center;
   backface-visibility: hidden;
@@ -1714,7 +1780,7 @@ onUnmounted(() => {
   flex: none;
   transition: transform 0.45s var(--ease-bounce);
 }
-.tpl-card:hover {
+.tpl-card:is(:hover, .is-auto-hover) {
   transform: translateY(-10px) scale(1.03) rotate(-0.6deg);
 }
 .tpl-thumb {
@@ -1726,7 +1792,7 @@ onUnmounted(() => {
     transform 0.5s var(--ease-bounce),
     box-shadow 0.35s ease;
 }
-.tpl-card:hover .tpl-thumb {
+.tpl-card:is(:hover, .is-auto-hover) .tpl-thumb {
   transform: scale(1.05);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
 }
@@ -1748,7 +1814,7 @@ onUnmounted(() => {
   color: #9ca3af;
   font-weight: 400;
 }
-.tpl-card:hover .tpl-name {
+.tpl-card:is(:hover, .is-auto-hover) .tpl-name {
   color: #191919;
 }
 .tpl-cta {
@@ -1774,7 +1840,7 @@ onUnmounted(() => {
     transform 0.45s var(--ease-bounce),
     box-shadow 0.35s ease;
 }
-.btn-start:hover {
+.btn-start:is(:hover, .is-auto-hover) {
   background: #fee500;
   color: #191919;
   transform: translateY(-5px) scale(1.05);
@@ -1816,7 +1882,7 @@ onUnmounted(() => {
     transform 0.5s var(--ease-bounce),
     box-shadow 0.35s ease;
 }
-.brand-card:hover {
+.brand-card:is(:hover, .is-auto-hover) {
   transform: translateY(-10px) scale(1.04);
   box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12);
 }
@@ -1835,7 +1901,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
   transition: color 0.25s ease;
 }
-.brand-card:hover h3 {
+.brand-card:is(:hover, .is-auto-hover) h3 {
   color: #000;
 }
 .brand-card p {
@@ -1875,7 +1941,7 @@ onUnmounted(() => {
     border-color 0.25s ease,
     box-shadow 0.3s ease;
 }
-.process-list li:hover {
+.process-list li:is(:hover, .is-auto-hover) {
   transform: translateY(-8px) scale(1.03);
   background: #fff;
   border-color: #fee500;
@@ -1890,7 +1956,7 @@ onUnmounted(() => {
   color: #191919;
   transition: color 0.25s ease;
 }
-.process-list li:hover em {
+.process-list li:is(:hover, .is-auto-hover) em {
   color: #000;
 }
 .process-list strong {
@@ -1963,10 +2029,10 @@ onUnmounted(() => {
 .easy-card:last-child {
   transform-origin: right center;
 }
-.easy-card:hover {
+.easy-card:is(:hover, .is-auto-hover) {
   transform: translateY(-8px) scale(1.05);
 }
-.easy-card:first-child:hover {
+.easy-card:first-child:is(:hover, .is-auto-hover) {
   transform: translateY(-8px) scale(1.05);
   transform-origin: left center;
 }
@@ -1979,7 +2045,7 @@ onUnmounted(() => {
   aspect-ratio: 4 / 3;
   transition: box-shadow 0.3s ease;
 }
-.easy-card:hover .easy-frame {
+.easy-card:is(:hover, .is-auto-hover) .easy-frame {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
 }
 .easy-frame.design {
@@ -2060,7 +2126,7 @@ onUnmounted(() => {
     border-color 0.25s ease,
     box-shadow 0.3s ease;
 }
-.about-points li:hover {
+.about-points li:is(:hover, .is-auto-hover) {
   transform: translateY(-8px) scale(1.04);
   border-color: #fee500;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
@@ -2261,7 +2327,7 @@ onUnmounted(() => {
     text-align: left;
   }
   .hero {
-    --ring-z: -72vw;
+    --ring-z: -110vw;
   }
   .footer-nav {
     grid-template-columns: 1fr 1fr;
