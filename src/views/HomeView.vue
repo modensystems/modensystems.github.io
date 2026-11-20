@@ -11,22 +11,92 @@ const scrolled = ref(false)
 const ready = ref(false)
 const heroWord = ref(0)
 const palsOn = ref(false)
+const palsFollowing = ref(false)
 const palsRoot = ref<HTMLElement | null>(null)
+const brandDotRef = ref<HTMLElement | null>(null)
 
-const cursorPals = [
-  { id: 'star', kind: 'star' as const, size: 34, lag: 0.12 },
-  { id: 'spark', kind: 'spark' as const, size: 22, lag: 0.08 },
-  { id: 'blob', kind: 'blob' as const, size: 26, lag: 0.06 },
-  { id: 'heart', kind: 'heart' as const, size: 24, lag: 0.09 },
-  { id: 'bolt', kind: 'bolt' as const, size: 20, lag: 0.05 },
-]
+const PAL_KINDS = ['star', 'spark', 'blob', 'heart', 'bolt'] as const
+type PalKind = (typeof PAL_KINDS)[number]
+const PAL_MAX = 10
 
-const mouse = { x: 0, y: 0 }
-const palState = cursorPals.map(() => ({ x: -80, y: -80, rot: 0 }))
+const cursorPals = Array.from({ length: PAL_MAX }, (_, i) => {
+  const kind = PAL_KINDS[i % PAL_KINDS.length] as PalKind
+  const sizes = { star: 30, spark: 20, blob: 24, heart: 22, bolt: 18 }
+  return {
+    id: `pal-${i}`,
+    kind,
+    size: sizes[kind] + (i % 3) * 2,
+    followLag: 0.035 + i * 0.006,
+  }
+})
+
+const mouse = { x: 0, y: 0, active: false }
+const HOVER_RADIUS = 96
+const FOLLOW_EXIT_MS = 480
+
+type PalState = {
+  alive: boolean
+  x: number
+  y: number
+  vx: number
+  vy: number
+  rot: number
+  vr: number
+  scale: number
+  opacity: number
+  bornAt: number
+}
+
+const palState: PalState[] = cursorPals.map(() => ({
+  alive: false,
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  rot: 0,
+  vr: 0,
+  scale: 0,
+  opacity: 0,
+  bornAt: 0,
+}))
+
 let palsRaf = 0
-let palsTime = 0
 let palsReduceMotion = false
 let palNodes: HTMLElement[] = []
+let followUntil = 0
+let spawnedCount = 0
+let nextSpawnAt = 0
+let lastTick = 0
+
+function rand(min: number, max: number) {
+  return min + Math.random() * (max - min)
+}
+
+function getDotOrigin() {
+  const el = brandDotRef.value
+  if (!el) {
+    return { x: 96, y: 44 }
+  }
+  const rect = el.getBoundingClientRect()
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+}
+
+function spawnPal(index: number, now: number) {
+  const origin = getDotOrigin()
+  const angle = rand(-Math.PI * 0.15, Math.PI * 1.05)
+  const speed = rand(3.2, 6.4)
+  const state = palState[index]
+  state.alive = true
+  state.x = origin.x
+  state.y = origin.y
+  state.vx = Math.cos(angle) * speed
+  state.vy = Math.sin(angle) * speed + rand(0.5, 2.2)
+  state.rot = rand(-20, 20)
+  state.vr = rand(-4, 4)
+  state.scale = 0.2
+  state.opacity = 0
+  state.bornAt = now
+}
 
 const contact = {
   company: '모든시스템즈',
@@ -176,29 +246,107 @@ let revealObserver: IntersectionObserver | null = null
 function onPointerMove(event: PointerEvent) {
   mouse.x = event.clientX
   mouse.y = event.clientY
-  if (!palsOn.value) palsOn.value = true
+  mouse.active = true
+
+  const near = palState.some((state) => {
+    if (!state.alive) return false
+    const dx = state.x - mouse.x
+    const dy = state.y - mouse.y
+    return dx * dx + dy * dy < HOVER_RADIUS * HOVER_RADIUS
+  })
+  if (near) followUntil = performance.now() + FOLLOW_EXIT_MS
+}
+
+function onPointerLeave() {
+  mouse.active = false
 }
 
 function tickPals(now: number) {
-  const dt = Math.min(32, now - (palsTime || now))
-  palsTime = now
+  const dt = Math.min(34, now - (lastTick || now)) / 16.67
+  lastTick = now
   const t = now / 1000
+
+  // pour out from logo dot, up to 10
+  if (spawnedCount < PAL_MAX && now >= nextSpawnAt) {
+    spawnPal(spawnedCount, now)
+    spawnedCount += 1
+    nextSpawnAt = now + rand(90, 160)
+    if (!palsOn.value) palsOn.value = true
+  }
+
+  const following = now < followUntil && mouse.active
+  if (palsFollowing.value !== following) palsFollowing.value = following
+
+  const pad = 28
+  const maxX = window.innerWidth - pad
+  const maxY = window.innerHeight - pad
+  const minY = pad + 8
 
   cursorPals.forEach((pal, i) => {
     const state = palState[i]
-    const orbitX = Math.cos(t * (1.1 + i * 0.17) + i) * (18 + i * 10)
-    const orbitY = Math.sin(t * (1.4 + i * 0.13) + i * 1.3) * (14 + i * 8)
-    const bob = Math.sin(t * 3.2 + i * 1.7) * 6
-    const targetX = mouse.x + orbitX + (i - 2) * 14
-    const targetY = mouse.y + orbitY + bob - 18
-    const ease = 1 - (1 - pal.lag) ** (dt / 16.67)
-    state.x += (targetX - state.x) * ease
-    state.y += (targetY - state.y) * ease
-    state.rot += (Math.sin(t * 2 + i) * 18 - state.rot) * 0.08
     const node = palNodes[i]
-    if (node) {
-      node.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) translate(-50%, -50%) rotate(${state.rot}deg)`
+    if (!state.alive || !node) return
+
+    const age = now - state.bornAt
+    if (age < 280) {
+      const p = age / 280
+      state.opacity = Math.min(1, p * 1.2)
+      state.scale = 0.25 + Math.sin(p * Math.PI) * 0.95
+    } else {
+      state.opacity += (1 - state.opacity) * 0.12
     }
+
+    if (following) {
+      const angle = t * 0.85 + i * ((Math.PI * 2) / PAL_MAX)
+      const radius = 22 + (i % 5) * 7
+      const tx = mouse.x + Math.cos(angle) * radius
+      const ty = mouse.y + Math.sin(angle) * radius - 4
+      const lag = pal.followLag
+      state.x += (tx - state.x) * lag * 2.4
+      state.y += (ty - state.y) * lag * 2.4
+      state.vx *= 0.85
+      state.vy *= 0.85
+      state.rot += (Math.sin(t * 1.1 + i) * 6 - state.rot) * 0.08
+      state.scale += (1 - state.scale) * 0.12
+    } else {
+      state.vy += 0.045 * dt // tiny gravity for lively bounce
+      state.x += state.vx * dt
+      state.y += state.vy * dt
+      state.rot += state.vr * dt
+
+      if (state.x < pad) {
+        state.x = pad
+        state.vx = Math.abs(state.vx) * rand(0.86, 1.05)
+      } else if (state.x > maxX) {
+        state.x = maxX
+        state.vx = -Math.abs(state.vx) * rand(0.86, 1.05)
+      }
+      if (state.y < minY) {
+        state.y = minY
+        state.vy = Math.abs(state.vy) * rand(0.86, 1.08)
+      } else if (state.y > maxY) {
+        state.y = maxY
+        state.vy = -Math.abs(state.vy) * rand(0.9, 1.12)
+        state.vx += rand(-0.4, 0.4)
+      }
+
+      // keep energy from dying out
+      const speed = Math.hypot(state.vx, state.vy)
+      if (speed < 1.6) {
+        const boost = rand(1.8, 3.2) / Math.max(0.2, speed)
+        state.vx *= boost
+        state.vy *= boost
+      } else if (speed > 7.5) {
+        state.vx *= 0.96
+        state.vy *= 0.96
+      }
+
+      state.scale += (1 + Math.sin(t * 5 + i) * 0.07 - state.scale) * 0.1
+    }
+
+    node.style.opacity = String(Math.max(0, Math.min(1, state.opacity)))
+    node.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) translate(-50%, -50%) rotate(${state.rot}deg) scale(${Math.max(0.2, state.scale)})`
+    node.classList.toggle('is-follow', following)
   })
 
   palsRaf = window.requestAnimationFrame(tickPals)
@@ -270,12 +418,17 @@ onMounted(() => {
   palsReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
   if (!palsReduceMotion && finePointer) {
-    mouse.x = window.innerWidth * 0.55
-    mouse.y = 160
+    mouse.x = window.innerWidth * 0.4
+    mouse.y = 120
     palNodes = palsRoot.value
       ? Array.from(palsRoot.value.querySelectorAll<HTMLElement>('.cursor-pal'))
       : []
+    spawnedCount = 0
+    nextSpawnAt = performance.now() + 280
+    lastTick = performance.now()
     window.addEventListener('pointermove', onPointerMove, { passive: true })
+    window.addEventListener('pointerleave', onPointerLeave)
+    document.documentElement.addEventListener('mouseleave', onPointerLeave)
     palsRaf = window.requestAnimationFrame(tickPals)
   }
 
@@ -301,6 +454,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   document.removeEventListener('keydown', onKeydown)
   window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerleave', onPointerLeave)
+  document.documentElement.removeEventListener('mouseleave', onPointerLeave)
   window.cancelAnimationFrame(palsRaf)
   window.clearTimeout(menuCloseTimer)
   window.clearInterval(heroTimer)
@@ -314,7 +469,7 @@ onUnmounted(() => {
     <div
       ref="palsRoot"
       class="cursor-pals"
-      :class="{ on: palsOn && !menuOpen }"
+      :class="{ on: palsOn && !menuOpen, follow: palsFollowing }"
       aria-hidden="true"
     >
       <div
@@ -351,7 +506,8 @@ onUnmounted(() => {
     <!-- ===== KEEP: header ===== -->
     <header class="nav on-hero" :class="{ 'is-down': scrolled }">
       <a class="brand" href="#top" @click="closeMenu" aria-label="모든시스템즈">
-        moden<span class="brand-dot">.</span><span class="brand-sub">systems</span>
+        moden<span ref="brandDotRef" class="brand-dot">.</span
+        ><span class="brand-sub">systems</span>
       </a>
 
       <nav class="nav-links" aria-label="주요 메뉴">
@@ -693,10 +849,14 @@ onUnmounted(() => {
   left: 0;
   display: grid;
   place-items: center;
-  will-change: transform;
+  will-change: transform, opacity;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.12));
-  animation: pal-bob 1.6s var(--ease-bounce) infinite;
+  transition: filter 0.3s ease;
 }
+.cursor-pals.follow .cursor-pal {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+.cursor-pal.svg,
 .cursor-pal svg {
   width: 100%;
   height: 100%;
@@ -704,35 +864,21 @@ onUnmounted(() => {
 }
 .cursor-pal.is-star {
   color: #fee500;
-  animation-delay: 0s;
 }
 .cursor-pal.is-spark {
   color: #f59e0b;
-  animation-delay: 0.15s;
 }
 .cursor-pal.is-blob {
   color: #111;
-  animation-delay: 0.3s;
 }
 .cursor-pal.is-heart {
   color: #fb7185;
-  animation-delay: 0.45s;
 }
 .cursor-pal.is-bolt {
   color: #38bdf8;
-  animation-delay: 0.6s;
 }
-@keyframes pal-bob {
-  0%,
-  100% {
-    scale: 1;
-  }
-  40% {
-    scale: 1.18;
-  }
-  65% {
-    scale: 0.92;
-  }
+.cursor-pal.is-follow {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
 }
 @media (hover: none), (pointer: coarse) {
   .cursor-pals {
