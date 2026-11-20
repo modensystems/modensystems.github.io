@@ -155,6 +155,7 @@ const footerCols = [
 
 let menuCloseTimer = 0
 let heroTimer = 0
+let revealObserver: IntersectionObserver | null = null
 
 function setMenuOpen(open: boolean) {
   window.clearTimeout(menuCloseTimer)
@@ -218,6 +219,24 @@ onMounted(() => {
   heroTimer = window.setInterval(() => {
     heroWord.value = (heroWord.value + 1) % heroWords.length
   }, 2800)
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const revealEls = document.querySelectorAll('.bounce-in')
+  if (reduceMotion) {
+    revealEls.forEach((el) => el.classList.add('is-in'))
+  } else {
+    revealObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          entry.target.classList.add('is-in')
+          revealObserver?.unobserve(entry.target)
+        }
+      },
+      { threshold: 0.14, rootMargin: '0px 0px -6% 0px' },
+    )
+    revealEls.forEach((el) => revealObserver?.observe(el))
+  }
 })
 
 onUnmounted(() => {
@@ -225,6 +244,7 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
   window.clearTimeout(menuCloseTimer)
   window.clearInterval(heroTimer)
+  revealObserver?.disconnect()
   document.body.classList.remove('menu-open')
 })
 </script>
@@ -322,7 +342,7 @@ onUnmounted(() => {
     <main id="top">
       <!-- HERO -->
       <section class="hero" aria-label="회사 소개">
-        <div class="hero-copy">
+        <div class="hero-copy hero-pop">
           <p class="hero-kicker">반응형 모바일 웹 제작 전문</p>
           <h1 class="hero-title">
             <span class="hero-rotator" aria-live="polite">
@@ -365,13 +385,13 @@ onUnmounted(() => {
       <!-- WORK TYPES -->
       <section id="template-list" class="templates">
         <div class="tpl-inner">
-          <div class="tpl-head">
+          <div class="tpl-head bounce-in">
             <h2>이런 사이트를<br />만듭니다</h2>
             <p>기업 소개, 예약·문의, 쇼핑, 포트폴리오 등<br />업종에 맞는 반응형 홈페이지를 제작합니다</p>
           </div>
         </div>
 
-        <div class="tpl-marquee">
+        <div class="tpl-marquee bounce-in" style="--bounce-delay: 80ms">
           <div class="tpl-track">
             <article v-for="(t, i) in templateLoop" :key="`${t.name}-${i}`" class="tpl-card">
               <div class="tpl-thumb" :style="{ backgroundImage: `url(${t.img})` }" />
@@ -383,19 +403,24 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="tpl-cta">
+        <div class="tpl-cta bounce-in" style="--bounce-delay: 140ms">
           <a class="btn-start" :href="`mailto:${contact.email}`">프로젝트 문의하기</a>
         </div>
       </section>
 
       <!-- FOCUS AREAS -->
       <section class="sec brands">
-        <div class="sec-head light">
+        <div class="sec-head light bounce-in">
           <h2>우리가<br />잘하는 일</h2>
           <a class="more" href="#services">서비스 보기</a>
         </div>
         <div class="brand-grid">
-          <article v-for="b in brands" :key="b.name" class="brand-card">
+          <article
+            v-for="(b, i) in brands"
+            :key="b.name"
+            class="brand-card bounce-in"
+            :style="{ '--bounce-delay': `${80 + i * 90}ms` }"
+          >
             <div class="brand-thumb" :style="{ backgroundImage: `url(${b.img})` }" />
             <h3>{{ b.title }}</h3>
             <p>
@@ -409,11 +434,16 @@ onUnmounted(() => {
       <!-- SERVICES -->
       <section id="services" class="easy">
         <div class="easy-rail">
-          <h2 class="easy-title">
+          <h2 class="easy-title bounce-in">
             서비스<br />안내
           </h2>
           <div class="easy-scroller">
-            <article v-for="f in easyFeatures" :key="f.title" class="easy-card">
+            <article
+              v-for="(f, i) in easyFeatures"
+              :key="f.title"
+              class="easy-card bounce-in"
+              :style="{ '--bounce-delay': `${100 + i * 100}ms` }"
+            >
               <div class="easy-frame" :class="f.tone">
                 <img class="easy-img" :src="f.img" :alt="f.title" />
               </div>
@@ -426,12 +456,17 @@ onUnmounted(() => {
 
       <!-- PROCESS -->
       <section id="process" class="sec process">
-        <div class="sec-head light">
+        <div class="sec-head light bounce-in">
           <h2>진행 과정</h2>
           <p>문의부터 오픈까지<br />함께 진행합니다</p>
         </div>
         <ol class="process-list">
-          <li v-for="p in processSteps" :key="p.step">
+          <li
+            v-for="(p, i) in processSteps"
+            :key="p.step"
+            class="bounce-in"
+            :style="{ '--bounce-delay': `${70 + i * 80}ms` }"
+          >
             <em>{{ p.step }}</em>
             <strong>{{ p.title }}</strong>
             <span>{{ p.desc }}</span>
@@ -442,7 +477,7 @@ onUnmounted(() => {
       <!-- ABOUT -->
       <section id="systems" class="about">
         <div class="about-inner">
-          <div class="about-copy">
+          <div class="about-copy bounce-in">
             <p class="about-kicker">About</p>
             <h2>
               반응형 모바일 웹을 전문으로 하는<br />웹 제작사, 모든시스템즈
@@ -454,7 +489,12 @@ onUnmounted(() => {
             <a class="btn-start" :href="`mailto:${contact.email}`">이메일로 문의하기</a>
           </div>
           <ul class="about-points">
-            <li v-for="a in aboutPoints" :key="a.label">
+            <li
+              v-for="(a, i) in aboutPoints"
+              :key="a.label"
+              class="bounce-in"
+              :style="{ '--bounce-delay': `${90 + i * 90}ms` }"
+            >
               <em>{{ a.label }}</em>
               <strong>{{ a.value }}</strong>
             </li>
@@ -463,7 +503,7 @@ onUnmounted(() => {
       </section>
 
       <!-- CTA -->
-      <section class="cta">
+      <section class="cta bounce-in">
         <h2>홈페이지·반응형 웹이 필요하시면<br />편하게 문의해 주세요</h2>
         <a class="btn-start" :href="`mailto:${contact.email}`">상담 문의</a>
       </section>
@@ -518,9 +558,25 @@ onUnmounted(() => {
   transition: opacity 0.4s ease;
   background: #fff;
   color: #15181e;
+  --ease-bounce: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --ease-pop: cubic-bezier(0.22, 1.7, 0.36, 1);
 }
 .page.ready {
   opacity: 1;
+}
+
+.bounce-in {
+  opacity: 0;
+  transform: translateY(28px) scale(0.94);
+  transition:
+    opacity 0.5s var(--ease-bounce),
+    transform 0.7s var(--ease-bounce);
+  transition-delay: var(--bounce-delay, 0ms);
+  will-change: transform, opacity;
+}
+.bounce-in.is-in {
+  opacity: 1;
+  transform: none;
 }
 
 /* ——— HEADER (imweb: white) ——— */
@@ -552,10 +608,29 @@ onUnmounted(() => {
   text-decoration: none;
   line-height: 1;
   flex: none;
+  transform-origin: left center;
+  transition: transform 0.45s var(--ease-bounce);
+}
+.brand:hover {
+  transform: scale(1.06) rotate(-1deg);
 }
 .brand-dot {
+  display: inline-block;
   color: #fee500;
   margin-left: 1px;
+  animation: bob-dot 1.7s var(--ease-bounce) infinite;
+}
+@keyframes bob-dot {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-4px) scale(1.18);
+  }
+  65% {
+    transform: translateY(1px) scale(0.96);
+  }
 }
 .brand-sub {
   margin-left: 6px;
@@ -658,7 +733,15 @@ onUnmounted(() => {
   box-shadow: none;
   background: #111;
   color: #fff;
-  transition: background 0.35s ease;
+  transition:
+    background 0.35s ease,
+    transform 0.4s var(--ease-bounce);
+}
+.btn-ask:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+.btn-ask:active {
+  transform: translateY(0) scale(0.94);
 }
 .btn-ask em {
   position: relative;
@@ -689,6 +772,7 @@ onUnmounted(() => {
   border: 0;
   outline: none;
   box-shadow: none;
+  transform: translateY(-2px) scale(1.04);
 }
 .btn-ask:hover em {
   color: #191919;
@@ -719,6 +803,12 @@ onUnmounted(() => {
   cursor: pointer;
   box-sizing: border-box;
 }
+.nav-toggle:hover .line-a {
+  width: 28px;
+}
+.nav-toggle:hover .line-c {
+  width: 28px;
+}
 .nav-toggle .line {
   display: block;
   width: 28px;
@@ -727,8 +817,8 @@ onUnmounted(() => {
   background: #111;
   transform-origin: center;
   transition:
-    transform 0.35s ease,
-    width 0.35s ease,
+    transform 0.4s var(--ease-bounce),
+    width 0.4s var(--ease-bounce),
     opacity 0.35s ease,
     background 0.35s ease;
 }
@@ -1005,6 +1095,17 @@ onUnmounted(() => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(6px);
 }
+.hero-pop {
+  opacity: 0;
+  transform: translateY(24px) scale(0.92);
+  transition:
+    opacity 0.55s var(--ease-bounce),
+    transform 0.75s var(--ease-pop);
+}
+.page.ready .hero-pop {
+  opacity: 1;
+  transform: none;
+}
 
 .hero-title {
   margin: 0;
@@ -1030,10 +1131,10 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(22px) scale(0.86);
   transition:
-    opacity 0.45s ease,
-    transform 0.45s ease;
+    opacity 0.4s ease,
+    transform 0.55s var(--ease-pop);
 }
 .hero-word.on {
   opacity: 1;
@@ -1118,12 +1219,15 @@ onUnmounted(() => {
   transition:
     background 0.25s ease,
     border-color 0.25s ease,
-    transform 0.25s ease;
+    transform 0.4s var(--ease-bounce);
 }
 .btn-ghost:hover {
   background: #f9fafb;
   border-color: #191919;
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.04);
+}
+.btn-ghost:active {
+  transform: translateY(0) scale(0.95);
 }
 
 /* ——— SECTIONS ——— */
@@ -1199,6 +1303,8 @@ onUnmounted(() => {
 }
 .tpl-marquee {
   overflow: hidden;
+  padding: 24px 0 28px;
+  margin: -12px 0 -16px;
 }
 .tpl-track {
   display: flex;
@@ -1218,10 +1324,10 @@ onUnmounted(() => {
 .tpl-card {
   width: min(72vw, 300px);
   flex: none;
-  transition: transform 0.3s ease;
+  transition: transform 0.45s var(--ease-bounce);
 }
 .tpl-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-10px) scale(1.03) rotate(-0.6deg);
 }
 .tpl-thumb {
   height: min(58vw, 400px);
@@ -1229,11 +1335,11 @@ onUnmounted(() => {
   background: #f3f4f6 center / cover no-repeat;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
   transition:
-    transform 0.35s ease,
+    transform 0.5s var(--ease-bounce),
     box-shadow 0.35s ease;
 }
 .tpl-card:hover .tpl-thumb {
-  transform: scale(1.02);
+  transform: scale(1.05);
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
 }
 .tpl-meta {
@@ -1277,12 +1383,18 @@ onUnmounted(() => {
   transition:
     background 0.25s ease,
     color 0.25s ease,
-    transform 0.25s ease;
+    transform 0.45s var(--ease-bounce),
+    box-shadow 0.35s ease;
 }
 .btn-start:hover {
   background: #fee500;
   color: #191919;
-  transform: translateY(-2px);
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 12px 24px rgba(254, 229, 0, 0.35);
+}
+.btn-start:active {
+  transform: translateY(0) scale(0.94);
+  box-shadow: none;
 }
 @media (max-width: 767px) {
   .tpl-head {
@@ -1300,9 +1412,10 @@ onUnmounted(() => {
 }
 .brand-grid {
   width: min(100% - 40px, 1120px);
-  margin: 0 auto;
+  margin: -8px auto -16px;
   display: grid;
   gap: 16px;
+  padding: 20px 8px 28px;
 }
 .brand-card {
   background: #fff;
@@ -1310,21 +1423,18 @@ onUnmounted(() => {
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.05);
   color: #15181e;
+  transform-origin: center center;
   transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
+    transform 0.5s var(--ease-bounce),
+    box-shadow 0.35s ease;
 }
 .brand-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.1);
+  transform: translateY(-10px) scale(1.04);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12);
 }
 .brand-thumb {
   height: 220px;
   background: #ddd center / cover no-repeat;
-  transition: transform 0.4s ease;
-}
-.brand-card:hover .brand-thumb {
-  transform: scale(1.04);
 }
 .brand-card h3 {
   margin: 18px 18px 0;
@@ -1372,16 +1482,16 @@ onUnmounted(() => {
   background: #f7f7f7;
   border: 1px solid transparent;
   transition:
-    transform 0.25s ease,
+    transform 0.45s var(--ease-bounce),
     background 0.25s ease,
     border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    box-shadow 0.3s ease;
 }
 .process-list li:hover {
-  transform: translateY(-4px);
+  transform: translateY(-8px) scale(1.03);
   background: #fff;
   border-color: #fee500;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
 }
 .process-list em {
   grid-row: 1 / span 2;
@@ -1446,16 +1556,19 @@ onUnmounted(() => {
   grid-auto-columns: minmax(280px, 360px);
   gap: 48px;
   overflow-x: auto;
-  padding-bottom: 12px;
+  /* overflow-x:auto forces y clip — pad so hover scale/lift isn't cut off */
+  padding: 28px 8px 36px;
+  margin: -28px -8px -24px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
 .easy-card {
   scroll-snap-align: start;
-  transition: transform 0.3s ease;
+  transform-origin: center center;
+  transition: transform 0.5s var(--ease-bounce);
 }
 .easy-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-10px) scale(1.05);
 }
 .easy-frame {
   padding: 0;
@@ -1467,7 +1580,7 @@ onUnmounted(() => {
   transition: box-shadow 0.3s ease;
 }
 .easy-card:hover .easy-frame {
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
 }
 .easy-frame.design {
   background: #eceff3;
@@ -1483,10 +1596,6 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
-}
-.easy-card:hover .easy-img {
-  transform: scale(1.03);
 }
 .easy-card h3 {
   margin: 0 0 10px;
@@ -1547,14 +1656,14 @@ onUnmounted(() => {
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.04);
   transition:
-    transform 0.25s ease,
+    transform 0.45s var(--ease-bounce),
     border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    box-shadow 0.3s ease;
 }
 .about-points li:hover {
-  transform: translateY(-4px);
+  transform: translateY(-8px) scale(1.04);
   border-color: #fee500;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
 }
 .about-points em {
   display: block;
@@ -1644,12 +1753,14 @@ onUnmounted(() => {
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    transform 0.4s var(--ease-bounce);
 }
 .footer-social a:hover {
   background: #fee500;
   border-color: #fee500;
   color: #191919;
+  transform: translateY(-4px) scale(1.12) rotate(-8deg);
 }
 .footer-bottom {
   display: flex;
