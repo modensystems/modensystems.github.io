@@ -1135,7 +1135,7 @@ onUnmounted(() => {
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.12));
   transition: filter 0.3s ease;
   pointer-events: auto;
-  cursor: none;
+  cursor: default;
 }
 .cursor-pals.follow .cursor-pal {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
