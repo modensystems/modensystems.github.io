@@ -15,20 +15,57 @@ const palsFollowing = ref(false)
 const palsRoot = ref<HTMLElement | null>(null)
 const brandDotRef = ref<HTMLElement | null>(null)
 
-const PAL_KINDS = ['star', 'spark', 'blob', 'heart', 'bolt'] as const
+const PAL_KINDS = [
+  'star',
+  'spark',
+  'blob',
+  'heart',
+  'bolt',
+  'moon',
+  'flower',
+  'diamond',
+  'smile',
+  'ring',
+] as const
 type PalKind = (typeof PAL_KINDS)[number]
-const PAL_MAX = 10
+const PAL_MAX = PAL_KINDS.length
 
-const cursorPals = Array.from({ length: PAL_MAX }, (_, i) => {
-  const kind = PAL_KINDS[i % PAL_KINDS.length] as PalKind
-  const sizes = { star: 30, spark: 20, blob: 24, heart: 22, bolt: 18 }
-  return {
-    id: `pal-${i}`,
-    kind,
-    size: sizes[kind] + (i % 3) * 2,
-    followLag: 0.035 + i * 0.006,
-  }
-})
+const PAL_SIZES: Record<PalKind, number> = {
+  star: 30,
+  spark: 22,
+  blob: 26,
+  heart: 24,
+  bolt: 20,
+  moon: 24,
+  flower: 28,
+  diamond: 24,
+  smile: 26,
+  ring: 22,
+}
+
+const PAL_PATHS: Record<PalKind, string> = {
+  star: 'M12 2.4l2.7 6.2 6.7.7-5 4.5 1.4 6.6L12 17.4 6.2 20.4l1.4-6.6-5-4.5 6.7-.7L12 2.4z',
+  spark: 'M12 1l1.6 7.4L21 10l-7.4 1.6L12 19l-1.6-7.4L3 10l7.4-1.6L12 1z',
+  blob: 'M12 3c3.2 0 6 2.2 6.7 5.2.9-.3 1.9.1 2.3 1 1.1 2.3-.4 5.1-2.8 6.1-1 2.8-3.7 4.7-6.7 4.7-4.1 0-7.5-3.2-7.5-7.2C4 7.8 7.5 3 12 3z',
+  heart:
+    'M12 20.4S3.6 14.8 3.6 9.7A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.4 2.5c0 5.1-8.4 10.7-8.4 10.7z',
+  bolt: 'M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z',
+  moon: 'M15.4 2.2A8.8 8.8 0 1 0 21.8 14 7.2 7.2 0 0 1 15.4 2.2z',
+  flower:
+    'M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6zm0-6.4a3 3 0 0 0-2.1 5.1A3 3 0 0 0 12 2.8zm6.4 3.7a3 3 0 0 0-4.2 0 3 3 0 0 0 4.2 0zM21.2 12a3 3 0 0 0-5.1 2.1A3 3 0 0 0 21.2 12zm-3.7 6.4a3 3 0 0 0 0-4.2 3 3 0 0 0 0 4.2zM12 21.2a3 3 0 0 0 2.1-5.1A3 3 0 0 0 12 21.2zm-6.4-3.7a3 3 0 0 0 4.2 0 3 3 0 0 0-4.2 0zM2.8 12a3 3 0 0 0 5.1-2.1A3 3 0 0 0 2.8 12zm3.7-6.4a3 3 0 0 0 0 4.2 3 3 0 0 0 0-4.2z',
+  diamond: 'M12 2.5 21 9.2 12 21.5 3 9.2 12 2.5zm0 3.2L6.4 9.5 12 18l5.6-8.5L12 5.7z',
+  smile:
+    'M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zm-3.2 7.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm6.4 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zM8.8 14.2a4.4 4.4 0 0 0 6.4 0l-1.1-1a3 3 0 0 1-4.2 0l-1.1 1z',
+  ring: 'M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6zm0 2.6a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4z',
+}
+
+const cursorPals = PAL_KINDS.map((kind, i) => ({
+  id: `pal-${kind}`,
+  kind,
+  size: PAL_SIZES[kind],
+  followLag: 0.035 + i * 0.006,
+  path: PAL_PATHS[kind],
+}))
 
 const mouse = { x: 0, y: 0, active: false }
 const CATCH_RADIUS = 54
@@ -511,26 +548,8 @@ onUnmounted(() => {
         :class="`is-${pal.kind}`"
         :style="{ width: `${pal.size}px`, height: `${pal.size}px` }"
       >
-        <svg v-if="pal.kind === 'star'" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M12 2.4l2.7 6.2 6.7.7-5 4.5 1.4 6.6L12 17.4 6.2 20.4l1.4-6.6-5-4.5 6.7-.7L12 2.4z"
-          />
-        </svg>
-        <svg v-else-if="pal.kind === 'spark'" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 1l1.6 7.4L21 10l-7.4 1.6L12 19l-1.6-7.4L3 10l7.4-1.6L12 1z" />
-        </svg>
-        <svg v-else-if="pal.kind === 'blob'" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M12 3c3.2 0 6 2.2 6.7 5.2.9-.3 1.9.1 2.3 1 1.1 2.3-.4 5.1-2.8 6.1-1 2.8-3.7 4.7-6.7 4.7-4.1 0-7.5-3.2-7.5-7.2C4 7.8 7.5 3 12 3z"
-          />
-        </svg>
-        <svg v-else-if="pal.kind === 'heart'" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M12 20.4S3.6 14.8 3.6 9.7A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.4 2.5c0 5.1-8.4 10.7-8.4 10.7z"
-          />
-        </svg>
-        <svg v-else viewBox="0 0 24 24" fill="currentColor">
-          <path d="M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z" />
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path :d="pal.path" />
         </svg>
       </div>
     </div>
@@ -908,6 +927,21 @@ onUnmounted(() => {
 }
 .cursor-pal.is-bolt {
   color: #38bdf8;
+}
+.cursor-pal.is-moon {
+  color: #a78bfa;
+}
+.cursor-pal.is-flower {
+  color: #f472b6;
+}
+.cursor-pal.is-diamond {
+  color: #22d3ee;
+}
+.cursor-pal.is-smile {
+  color: #84cc16;
+}
+.cursor-pal.is-ring {
+  color: #fb923c;
 }
 .cursor-pal.is-follow {
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
