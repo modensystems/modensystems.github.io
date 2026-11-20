@@ -31,11 +31,13 @@ const cursorPals = Array.from({ length: PAL_MAX }, (_, i) => {
 })
 
 const mouse = { x: 0, y: 0, active: false }
-const HOVER_RADIUS = 96
-const FOLLOW_EXIT_MS = 480
+const CATCH_RADIUS = 54
+const DOT_CYCLE_MS = 1700
+const DOT_PEAK_MS = 680 // 40% of bob-dot keyframes
 
 type PalState = {
   alive: boolean
+  caught: boolean
   x: number
   y: number
   vx: number
@@ -49,6 +51,7 @@ type PalState = {
 
 const palState: PalState[] = cursorPals.map(() => ({
   alive: false,
+  caught: false,
   x: 0,
   y: 0,
   vx: 0,
@@ -63,10 +66,10 @@ const palState: PalState[] = cursorPals.map(() => ({
 let palsRaf = 0
 let palsReduceMotion = false
 let palNodes: HTMLElement[] = []
-let followUntil = 0
 let spawnedCount = 0
 let nextSpawnAt = 0
 let lastTick = 0
+let dotAnimStart = 0
 
 function rand(min: number, max: number) {
   return min + Math.random() * (max - min)
@@ -81,16 +84,26 @@ function getDotOrigin() {
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
 
+function syncDotAnimation(now: number) {
+  const el = brandDotRef.value
+  if (!el) return
+  el.style.animation = 'none'
+  void el.offsetWidth
+  el.style.animation = ''
+  dotAnimStart = now
+}
+
 function spawnPal(index: number, now: number) {
   const origin = getDotOrigin()
-  const angle = rand(-Math.PI * 0.15, Math.PI * 1.05)
-  const speed = rand(3.2, 6.4)
+  const angle = rand(-Math.PI * 0.2, Math.PI * 0.95)
+  const speed = rand(3.4, 6.8)
   const state = palState[index]
   state.alive = true
+  state.caught = false
   state.x = origin.x
   state.y = origin.y
   state.vx = Math.cos(angle) * speed
-  state.vy = Math.sin(angle) * speed + rand(0.5, 2.2)
+  state.vy = Math.sin(angle) * speed + rand(0.8, 2.4)
   state.rot = rand(-20, 20)
   state.vr = rand(-4, 4)
   state.scale = 0.2
@@ -248,17 +261,34 @@ function onPointerMove(event: PointerEvent) {
   mouse.y = event.clientY
   mouse.active = true
 
-  const near = palState.some((state) => {
-    if (!state.alive) return false
+  // catch the nearest uncaught pal under the cursor (one at a time)
+  let best = -1
+  let bestDist = CATCH_RADIUS * CATCH_RADIUS
+  palState.forEach((state, i) => {
+    if (!state.alive || state.caught) return
     const dx = state.x - mouse.x
     const dy = state.y - mouse.y
-    return dx * dx + dy * dy < HOVER_RADIUS * HOVER_RADIUS
+    const d2 = dx * dx + dy * dy
+    if (d2 < bestDist) {
+      bestDist = d2
+      best = i
+    }
   })
-  if (near) followUntil = performance.now() + FOLLOW_EXIT_MS
+  if (best >= 0) {
+    palState[best].caught = true
+    palState[best].vx = 0
+    palState[best].vy = 0
+  }
 }
 
 function onPointerLeave() {
   mouse.active = false
+  palState.forEach((state) => {
+    if (!state.caught) return
+    state.caught = false
+    state.vx = rand(-2.4, 2.4)
+    state.vy = rand(-2.8, -1.2)
+  })
 }
 
 function tickPals(now: number) {
@@ -266,21 +296,23 @@ function tickPals(now: number) {
   lastTick = now
   const t = now / 1000
 
-  // pour out from logo dot, up to 10
+  // spawn one icon at each logo-dot pulse peak
   if (spawnedCount < PAL_MAX && now >= nextSpawnAt) {
     spawnPal(spawnedCount, now)
     spawnedCount += 1
-    nextSpawnAt = now + rand(90, 160)
+    nextSpawnAt = dotAnimStart + DOT_PEAK_MS + spawnedCount * DOT_CYCLE_MS
     if (!palsOn.value) palsOn.value = true
   }
 
-  const following = now < followUntil && mouse.active
-  if (palsFollowing.value !== following) palsFollowing.value = following
+  const anyCaught = palState.some((s) => s.caught)
+  if (palsFollowing.value !== anyCaught) palsFollowing.value = anyCaught
 
   const pad = 28
   const maxX = window.innerWidth - pad
   const maxY = window.innerHeight - pad
   const minY = pad + 8
+  let followSlot = 0
+  const caughtTotal = palState.filter((s) => s.caught).length
 
   cursorPals.forEach((pal, i) => {
     const state = palState[i]
@@ -296,20 +328,20 @@ function tickPals(now: number) {
       state.opacity += (1 - state.opacity) * 0.12
     }
 
-    if (following) {
-      const angle = t * 0.85 + i * ((Math.PI * 2) / PAL_MAX)
-      const radius = 22 + (i % 5) * 7
+    if (state.caught && mouse.active) {
+      const slot = followSlot
+      followSlot += 1
+      const angle = t * 0.9 + slot * ((Math.PI * 2) / Math.max(1, caughtTotal))
+      const radius = 18 + (slot % 4) * 8
       const tx = mouse.x + Math.cos(angle) * radius
       const ty = mouse.y + Math.sin(angle) * radius - 4
       const lag = pal.followLag
-      state.x += (tx - state.x) * lag * 2.4
-      state.y += (ty - state.y) * lag * 2.4
-      state.vx *= 0.85
-      state.vy *= 0.85
-      state.rot += (Math.sin(t * 1.1 + i) * 6 - state.rot) * 0.08
-      state.scale += (1 - state.scale) * 0.12
+      state.x += (tx - state.x) * Math.min(0.35, lag * 3)
+      state.y += (ty - state.y) * Math.min(0.35, lag * 3)
+      state.rot += (Math.sin(t * 1.2 + i) * 5 - state.rot) * 0.08
+      state.scale += (1 - state.scale) * 0.14
     } else {
-      state.vy += 0.045 * dt // tiny gravity for lively bounce
+      state.vy += 0.045 * dt
       state.x += state.vx * dt
       state.y += state.vy * dt
       state.rot += state.vr * dt
@@ -330,7 +362,6 @@ function tickPals(now: number) {
         state.vx += rand(-0.4, 0.4)
       }
 
-      // keep energy from dying out
       const speed = Math.hypot(state.vx, state.vy)
       if (speed < 1.6) {
         const boost = rand(1.8, 3.2) / Math.max(0.2, speed)
@@ -346,7 +377,7 @@ function tickPals(now: number) {
 
     node.style.opacity = String(Math.max(0, Math.min(1, state.opacity)))
     node.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) translate(-50%, -50%) rotate(${state.rot}deg) scale(${Math.max(0.2, state.scale)})`
-    node.classList.toggle('is-follow', following)
+    node.classList.toggle('is-follow', state.caught)
   })
 
   palsRaf = window.requestAnimationFrame(tickPals)
@@ -424,8 +455,9 @@ onMounted(() => {
       ? Array.from(palsRoot.value.querySelectorAll<HTMLElement>('.cursor-pal'))
       : []
     spawnedCount = 0
-    nextSpawnAt = performance.now() + 280
     lastTick = performance.now()
+    syncDotAnimation(lastTick)
+    nextSpawnAt = dotAnimStart + DOT_PEAK_MS
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerleave', onPointerLeave)
     document.documentElement.addEventListener('mouseleave', onPointerLeave)
@@ -925,6 +957,7 @@ onUnmounted(() => {
   display: inline-block;
   color: #fee500;
   margin-left: 1px;
+  transform-origin: center bottom;
   animation: bob-dot 1.7s var(--ease-bounce) infinite;
 }
 @keyframes bob-dot {
@@ -933,10 +966,10 @@ onUnmounted(() => {
     transform: translateY(0) scale(1);
   }
   40% {
-    transform: translateY(-4px) scale(1.18);
+    transform: translateY(-7px) scale(1.72);
   }
   65% {
-    transform: translateY(1px) scale(0.96);
+    transform: translateY(2px) scale(0.92);
   }
 }
 .brand-sub {
