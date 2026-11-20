@@ -19,12 +19,12 @@ const PAL_KINDS = [
   'star',
   'spark',
   'blob',
-  'heart',
-  'bolt',
+  'chick',
+  'cloud',
   'moon',
-  'flower',
-  'diamond',
-  'smile',
+  'candy',
+  'bow',
+  'paw',
   'ring',
 ] as const
 type PalKind = (typeof PAL_KINDS)[number]
@@ -34,12 +34,12 @@ const PAL_SIZES: Record<PalKind, number> = {
   star: 30,
   spark: 22,
   blob: 26,
-  heart: 24,
-  bolt: 20,
+  chick: 26,
+  cloud: 28,
   moon: 24,
-  flower: 28,
-  diamond: 24,
-  smile: 26,
+  candy: 24,
+  bow: 26,
+  paw: 26,
   ring: 22,
 }
 
@@ -47,15 +47,15 @@ const PAL_PATHS: Record<PalKind, string> = {
   star: 'M12 2.4l2.7 6.2 6.7.7-5 4.5 1.4 6.6L12 17.4 6.2 20.4l1.4-6.6-5-4.5 6.7-.7L12 2.4z',
   spark: 'M12 1l1.6 7.4L21 10l-7.4 1.6L12 19l-1.6-7.4L3 10l7.4-1.6L12 1z',
   blob: 'M12 3c3.2 0 6 2.2 6.7 5.2.9-.3 1.9.1 2.3 1 1.1 2.3-.4 5.1-2.8 6.1-1 2.8-3.7 4.7-6.7 4.7-4.1 0-7.5-3.2-7.5-7.2C4 7.8 7.5 3 12 3z',
-  heart:
-    'M12 20.4S3.6 14.8 3.6 9.7A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.4 2.5c0 5.1-8.4 10.7-8.4 10.7z',
-  bolt: 'M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z',
+  chick:
+    'M17.2 6.8a2.4 2.4 0 0 0-3.4-3.2A6.4 6.4 0 0 0 5.8 9.8c0 2.7 1.6 5 3.9 6L8.8 20h2.2l.7-2.3h.6l.7 2.3H15l-1-4.2c2.1-.9 3.5-3 3.5-5.4 0-1.2-.3-2.3-.8-3.3zm-6.4 2a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zm3.5 0a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM19.2 9.1l-2.6.9 2.6.9.9-1.8-.9z',
+  cloud:
+    'M8.2 18.5h9.2c2.6 0 4.6-1.9 4.6-4.2s-2-4.2-4.6-4.2c-.3 0-.6 0-.9.1A5.3 5.3 0 0 0 7.2 7.8 5.1 5.1 0 0 0 2.2 13c0 3 2.5 5.5 6 5.5z',
   moon: 'M15.4 2.2A8.8 8.8 0 1 0 21.8 14 7.2 7.2 0 0 1 15.4 2.2z',
-  flower:
-    'M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6zm0-6.4a3 3 0 0 0-2.1 5.1A3 3 0 0 0 12 2.8zm6.4 3.7a3 3 0 0 0-4.2 0 3 3 0 0 0 4.2 0zM21.2 12a3 3 0 0 0-5.1 2.1A3 3 0 0 0 21.2 12zm-3.7 6.4a3 3 0 0 0 0-4.2 3 3 0 0 0 0 4.2zM12 21.2a3 3 0 0 0 2.1-5.1A3 3 0 0 0 12 21.2zm-6.4-3.7a3 3 0 0 0 4.2 0 3 3 0 0 0-4.2 0zM2.8 12a3 3 0 0 0 5.1-2.1A3 3 0 0 0 2.8 12zm3.7-6.4a3 3 0 0 0 0 4.2 3 3 0 0 0 0-4.2z',
-  diamond: 'M12 2.5 21 9.2 12 21.5 3 9.2 12 2.5zm0 3.2L6.4 9.5 12 18l5.6-8.5L12 5.7z',
-  smile:
-    'M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zm-3.2 7.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zm6.4 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4zM8.8 14.2a4.4 4.4 0 0 0 6.4 0l-1.1-1a3 3 0 0 1-4.2 0l-1.1 1z',
+  candy:
+    'M8.2 9.4 4.6 5.8l1.6-1.6 3.6 3.6a4.2 4.2 0 0 1 5.9 5.9l3.6 3.6-1.6 1.6-3.6-3.6a4.2 4.2 0 0 1-5.9-5.9zm3 1.2a2 2 0 1 0 2.8 2.8 2 2 0 0 0-2.8-2.8z',
+  bow: 'M12 10.2 7.2 7.4C5.4 6.4 3.2 7.7 3.2 9.8c0 1.3.8 2.2 2 2.6L12 14.8l6.8-2.4c1.2-.4 2-1.3 2-2.6 0-2.1-2.2-3.4-4-2.4L12 10.2zm0 5.2-4.4 5.2h2.6L12 17.8l1.8 2.8h2.6L12 15.4z',
+  paw: 'M7.2 9.2a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2zm4.8-1.2a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2zm4.8 1.2a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2zM6.4 12.6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm11.2 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 21c-3.4 0-5.8-2.2-5.8-4.8 0-2.2 1.8-3.6 5.8-3.6s5.8 1.4 5.8 3.6C17.8 18.8 15.4 21 12 21z',
   ring: 'M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6zm0 2.6a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4z',
 }
 
@@ -165,19 +165,19 @@ const contact = {
 }
 
 const navLinks = [
-  { label: '서비스', href: '#services' },
+  { label: '서비스', href: '#works' },
   { label: '포트폴리오', href: '#template-list' },
-  { label: '과정', href: '#process' },
-  { label: '회사', href: '#company' },
+  { label: '서비스안내', href: '#services' },
+  { label: 'ABOUT', href: '#systems' },
 ]
 
 const menuGroups = [
   {
     title: '서비스',
     links: [
-      { label: '반응형 모바일 웹', href: '#services' },
-      { label: '홈페이지 제작·운영', href: '#services' },
-      { label: '관리자 페이지', href: '#services' },
+      { label: '우리가 잘하는 일', href: '#works' },
+      { label: '반응형 모바일 웹', href: '#works' },
+      { label: '홈페이지 제작·운영', href: '#works' },
     ],
   },
   {
@@ -189,13 +189,18 @@ const menuGroups = [
     ],
   },
   {
-    title: '과정',
-    links: [{ label: '제작 과정', href: '#process' }],
+    title: '서비스안내',
+    links: [
+      { label: '반응형 모바일 웹', href: '#services' },
+      { label: '홈페이지 제작·운영', href: '#services' },
+      { label: '운영·유지보수', href: '#services' },
+      { label: '진행 과정', href: '#process' },
+    ],
   },
   {
-    title: '회사',
+    title: 'ABOUT',
     links: [
-      { label: '사업자 정보', href: '#company' },
+      { label: '회사 소개', href: '#systems' },
       { label: '상담 문의', href: 'mailto:allsys2687@gmail.com' },
     ],
   },
@@ -209,18 +214,18 @@ const marqueeImgs = Array.from({ length: 12 }, (_, i) =>
 )
 
 const templates = [
-  { name: '기업 소개', tag: '반응형 웹', img: asset('examples/site-01.jpg') },
-  { name: '쇼핑몰', tag: '모바일 커머스', img: asset('examples/site-02.jpg') },
-  { name: '예약·문의', tag: '서비스 사이트', img: asset('examples/site-03.jpg') },
-  { name: '포트폴리오', tag: '에이전시', img: asset('examples/site-04.jpg') },
-  { name: '커뮤니티', tag: '회원·게시판', img: asset('examples/site-05.jpg') },
-  { name: '브랜드 스토어', tag: '반응형 웹', img: asset('examples/site-06.jpg') },
-  { name: '비즈니스', tag: '기업 홈페이지', img: asset('examples/site-07.jpg') },
-  { name: '미디어', tag: '블로그·뉴스', img: asset('examples/site-08.jpg') },
-  { name: '이벤트', tag: '랜딩 페이지', img: asset('examples/site-09.jpg') },
-  { name: '카탈로그', tag: '제품 소개', img: asset('examples/site-10.jpg') },
-  { name: '제품 소개', tag: '모바일 웹', img: asset('examples/site-11.jpg') },
-  { name: '브랜드', tag: '반응형 웹', img: asset('examples/site-12.jpg') },
+  { name: '로그인', tag: 'LAB AUTOLINK', img: asset('examples/site-01.jpg') },
+  { name: '파트너 등록', tag: 'LAB AUTOLINK', img: asset('examples/site-02.jpg') },
+  { name: '랜딩 히어로', tag: '진단검사 분석', img: asset('examples/site-03.jpg') },
+  { name: '병원·파트너', tag: '서비스 소개', img: asset('examples/site-04.jpg') },
+  { name: '솔루션 단계', tag: '수익 분석', img: asset('examples/site-05.jpg') },
+  { name: '왜 지금인가', tag: '분리지급 대응', img: asset('examples/site-06.jpg') },
+  { name: '작동 방식', tag: '분석 플로우', img: asset('examples/site-07.jpg') },
+  { name: '리포트', tag: '모니터링', img: asset('examples/site-08.jpg') },
+  { name: '비교 포인트', tag: '견적 차별화', img: asset('examples/site-09.jpg') },
+  { name: '요금 안내', tag: '베타 무료', img: asset('examples/site-10.jpg') },
+  { name: '수익 시나리오', tag: '3가지 비교', img: asset('examples/site-11.jpg') },
+  { name: '분석 앱', tag: '반응형 웹', img: asset('examples/site-12.jpg') },
 ]
 
 const templateLoop = computed(() => [...templates, ...templates])
@@ -290,12 +295,12 @@ const footerCols = [
     links: ['기업·매장 홈페이지', '예약·문의 페이지', '랜딩·소개 페이지', '포트폴리오'],
   },
   {
-    title: '과정',
+    title: '서비스안내',
     links: ['상담·요구사항', '견적·일정', '제작·구축', '검수·오픈'],
   },
   {
-    title: '회사',
-    links: ['사업자 정보', '상담 문의'],
+    title: 'ABOUT',
+    links: ['회사 소개', '상담 문의'],
   },
 ]
 
@@ -782,7 +787,7 @@ onUnmounted(() => {
       </section>
 
       <!-- FOCUS AREAS -->
-      <section class="sec brands" data-auto-hover=".brand-card">
+      <section id="works" class="sec brands" data-auto-hover=".brand-card">
         <div class="sec-head light bounce-in">
           <h2>우리가<br />잘하는 일</h2>
           <a class="more" href="#services">서비스 보기</a>
@@ -934,6 +939,14 @@ onUnmounted(() => {
   --ease-bounce: cubic-bezier(0.34, 1.45, 0.64, 1);
   --ease-pop: cubic-bezier(0.22, 1.7, 0.36, 1);
 }
+#works,
+#services,
+#process,
+#systems,
+#template-list,
+#company {
+  scroll-margin-top: 96px;
+}
 .page.ready {
   opacity: 1;
 }
@@ -990,31 +1003,31 @@ onUnmounted(() => {
   color: #fee500;
 }
 .cursor-pal.is-spark {
-  color: #f59e0b;
+  color: #f5a623;
 }
 .cursor-pal.is-blob {
-  color: #111;
+  color: #191919;
 }
-.cursor-pal.is-heart {
-  color: #fb7185;
+.cursor-pal.is-chick {
+  color: #f5c518;
 }
-.cursor-pal.is-bolt {
-  color: #38bdf8;
+.cursor-pal.is-cloud {
+  color: #d6d0c8;
 }
 .cursor-pal.is-moon {
-  color: #a78bfa;
+  color: #c4b5a5;
 }
-.cursor-pal.is-flower {
-  color: #f472b6;
+.cursor-pal.is-candy {
+  color: #e8a87c;
 }
-.cursor-pal.is-diamond {
-  color: #22d3ee;
+.cursor-pal.is-bow {
+  color: #d4a017;
 }
-.cursor-pal.is-smile {
-  color: #84cc16;
+.cursor-pal.is-paw {
+  color: #c4a484;
 }
 .cursor-pal.is-ring {
-  color: #fb923c;
+  color: #f0b429;
 }
 .cursor-pal.is-follow {
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
