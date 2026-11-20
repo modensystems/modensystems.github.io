@@ -16,9 +16,6 @@ const palsFollowing = ref(false)
 const palsRoot = ref<HTMLElement | null>(null)
 const brandDotRef = ref<HTMLElement | null>(null)
 
-const FLOWEB_KAKAO = 'https://pf.kakao.com/_xlNbxeX/chat'
-const FLOWEB_QR = 'https://floweb.ai/brand/kakao-chat-qr-v1.svg'
-
 const consultForm = ref({
   phone: '',
   method: 'sms' as 'sms' | 'call',
@@ -26,7 +23,7 @@ const consultForm = ref({
   reference: '',
 })
 const consultSending = ref(false)
-const consultStatus = ref<'idle' | 'ok' | 'err'>('idle')
+const consultStatus = ref<'idle' | 'err'>('idle')
 
 const PAL_KINDS = [
   'star',
@@ -552,8 +549,8 @@ async function submitConsult(event?: Event) {
     })
 
     if (!res.ok) throw new Error(`submit failed: ${res.status}`)
-    consultStatus.value = 'ok'
     consultForm.value = { phone: '', method: 'sms', site: '', reference: '' }
+    closeConsult()
   } catch {
     consultStatus.value = 'err'
   } finally {
@@ -976,99 +973,73 @@ onUnmounted(() => {
           ×
         </button>
         <h2 id="consultTitle">무료 상담, 어떻게 받으실래요?</h2>
-        <div class="consult-grid">
-          <div class="consult-pane consult-kakao">
-            <h3>
-              <img class="consult-kakao-icon" :src="asset('kakao-logo.svg')" alt="" />
-              카카오톡으로 즉시 문의
-            </h3>
-            <img class="consult-qr" :src="FLOWEB_QR" alt="카카오톡 문의 QR" />
-            <p>
-              휴대폰 카메라로 찍으면 카카오톡 채팅이 열려요. 상담 내용만 남겨 주시면 됩니다.
-            </p>
-            <a class="consult-kakao-link" :href="FLOWEB_KAKAO" target="_blank" rel="noopener noreferrer">
-              이 기기에서 카카오톡 열기
-            </a>
-          </div>
-          <form class="consult-pane consult-form" @submit="submitConsult">
-            <h3>번호만 남기면 먼저 연락드려요</h3>
-            <template v-if="consultStatus === 'ok'">
-              <p class="consult-success">
-                문의가 접수됐어요. {{ contact.email }} 으로 바로 전달했습니다.
-              </p>
-              <button class="consult-submit" type="button" @click="closeConsult">닫기</button>
-            </template>
-            <template v-else>
-              <label class="consult-field">
-                <span>휴대폰 번호</span>
+        <form class="consult-pane consult-form" @submit="submitConsult">
+          <h3>번호만 남기면 먼저 연락드려요</h3>
+          <label class="consult-field">
+            <span>휴대폰 번호</span>
+            <input
+              v-model="consultForm.phone"
+              type="tel"
+              name="phone"
+              placeholder="010-0000-0000"
+              autocomplete="tel"
+              required
+              :disabled="consultSending"
+            />
+          </label>
+          <fieldset class="consult-field">
+            <legend>연락 받으실 방법</legend>
+            <div class="consult-methods">
+              <label :class="{ on: consultForm.method === 'sms' }">
                 <input
-                  v-model="consultForm.phone"
-                  type="tel"
-                  name="phone"
-                  placeholder="010-0000-0000"
-                  autocomplete="tel"
-                  required
+                  v-model="consultForm.method"
+                  type="radio"
+                  name="method"
+                  value="sms"
                   :disabled="consultSending"
                 />
+                문자
               </label>
-              <fieldset class="consult-field">
-                <legend>연락 받으실 방법</legend>
-                <div class="consult-methods">
-                  <label :class="{ on: consultForm.method === 'sms' }">
-                    <input
-                      v-model="consultForm.method"
-                      type="radio"
-                      name="method"
-                      value="sms"
-                      :disabled="consultSending"
-                    />
-                    문자
-                  </label>
-                  <label :class="{ on: consultForm.method === 'call' }">
-                    <input
-                      v-model="consultForm.method"
-                      type="radio"
-                      name="method"
-                      value="call"
-                      :disabled="consultSending"
-                    />
-                    전화
-                  </label>
-                </div>
-              </fieldset>
-              <label class="consult-field">
-                <span>만들고 싶은 사이트 (선택)</span>
-                <textarea
-                  v-model="consultForm.site"
-                  name="site"
-                  rows="2"
-                  placeholder="예: 시공 사례를 보여 주는 인테리어 업체 홈페이지"
-                  :disabled="consultSending"
-                />
-              </label>
-              <label class="consult-field">
-                <span>참고할 사이트 (있으면)</span>
+              <label :class="{ on: consultForm.method === 'call' }">
                 <input
-                  v-model="consultForm.reference"
-                  type="text"
-                  name="reference"
-                  placeholder="주소나 이름, 예: www.example.co.kr"
+                  v-model="consultForm.method"
+                  type="radio"
+                  name="method"
+                  value="call"
                   :disabled="consultSending"
                 />
+                전화
               </label>
-              <button class="consult-submit" type="submit" :disabled="consultSending">
-                {{ consultSending ? '보내는 중…' : '동의하고 연락 받기' }}
-              </button>
-              <p v-if="consultStatus === 'err'" class="consult-error">
-                전송에 실패했어요. 잠시 후 다시 시도하거나 {{ contact.email }} 으로 직접 문의해
-                주세요.
-              </p>
-              <p class="consult-note">
-                제출하면 {{ contact.email }} 으로 바로 전달됩니다. 상담은 무료예요.
-              </p>
-            </template>
-          </form>
-        </div>
+            </div>
+          </fieldset>
+          <label class="consult-field">
+            <span>만들고 싶은 사이트 (선택)</span>
+            <textarea
+              v-model="consultForm.site"
+              name="site"
+              rows="2"
+              placeholder="예: 시공 사례를 보여 주는 인테리어 업체 홈페이지"
+              :disabled="consultSending"
+            />
+          </label>
+          <label class="consult-field">
+            <span>참고할 사이트 (있으면)</span>
+            <input
+              v-model="consultForm.reference"
+              type="text"
+              name="reference"
+              placeholder="주소나 이름, 예: www.example.co.kr"
+              :disabled="consultSending"
+            />
+          </label>
+          <button class="consult-submit" type="submit" :disabled="consultSending">
+            {{ consultSending ? '보내는 중…' : '동의하고 연락 받기' }}
+          </button>
+          <p v-if="consultStatus === 'err'" class="consult-error">
+            전송에 실패했어요. 잠시 후 다시 시도해 주세요.
+          </p>
+          <p class="consult-note">상담은 무료예요.</p>
+        </form>
       </div>
     </div>
 
@@ -2490,7 +2461,7 @@ onUnmounted(() => {
 }
 .consult-modal {
   position: relative;
-  width: min(920px, 100%);
+  width: min(480px, 100%);
   max-height: min(90vh, 720px);
   overflow: auto;
   padding: 28px 28px 24px;
@@ -2520,57 +2491,14 @@ onUnmounted(() => {
   letter-spacing: -0.03em;
   color: #15181e;
 }
-.consult-grid {
-  display: grid;
-  gap: 18px;
-}
-@media (min-width: 800px) {
-  .consult-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 22px;
-  }
-}
 .consult-pane {
-  padding: 20px;
-  border-radius: 16px;
-  border: 1px solid #eceff3;
-  background: #fafafa;
+  padding: 4px 0 0;
 }
 .consult-pane h3 {
   margin: 0 0 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 16px;
   font-weight: 700;
   color: #191919;
-}
-.consult-kakao-icon {
-  width: 18px;
-  height: 18px;
-}
-.consult-qr {
-  width: min(180px, 70%);
-  margin: 8px auto 14px;
-  border-radius: 12px;
-  background: #fff;
-  padding: 10px;
-  border: 1px solid #eee;
-}
-.consult-pane p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.55;
-  color: #4b5563;
-}
-.consult-kakao-link {
-  display: inline-flex;
-  margin-top: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #191919;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 .consult-form {
   display: flex;
@@ -2661,12 +2589,6 @@ onUnmounted(() => {
   font-size: 13px !important;
   color: #9ca3af !important;
   text-align: center;
-}
-.consult-success {
-  margin: 8px 0 4px !important;
-  font-size: 15px !important;
-  line-height: 1.55 !important;
-  color: #191919 !important;
 }
 .consult-error {
   margin: 0 !important;
