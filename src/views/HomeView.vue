@@ -131,7 +131,7 @@ const processSteps = [
 const aboutPoints = [
   { label: '주력', value: '반응형 모바일 웹' },
   { label: '범위', value: '기획 · 디자인 · 개발 · 운영' },
-  { label: '위치', value: '부산' },
+  { label: '방식', value: '맞춤 제작' },
 ]
 
 const footerCols = [
@@ -445,7 +445,7 @@ onUnmounted(() => {
           <div class="about-copy">
             <p class="about-kicker">About</p>
             <h2>
-              부산에서 활동하는<br />웹 제작사, 모든시스템즈
+              반응형 모바일 웹을 전문으로 하는<br />웹 제작사, 모든시스템즈
             </h2>
             <p>
               반응형 모바일 웹을 중심으로 홈페이지 제작·운영과
