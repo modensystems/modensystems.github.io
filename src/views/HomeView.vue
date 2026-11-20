@@ -315,9 +315,7 @@ function onPointerMove(event: PointerEvent) {
   mouse.y = event.clientY
   mouse.active = true
 
-  if (palsDrained) return
-
-  // catch the nearest uncaught pal under the cursor (one at a time)
+  // catch the nearest uncaught icon under the cursor (works while drained too)
   let best = -1
   let bestDist = CATCH_RADIUS * CATCH_RADIUS
   palState.forEach((state, i) => {
@@ -338,16 +336,23 @@ function onPointerMove(event: PointerEvent) {
 }
 
 function drainPals() {
-  if (palsDrained) return
   palsDrained = true
-  palsFollowing.value = false
   palState.forEach((state) => {
-    if (!state.alive) return
-    state.caught = false
+    if (!state.alive || state.caught) return
     // cut bounce energy and tip them downward
     state.vx = state.vx * 0.25 + rand(-1.4, 1.4)
     state.vy = Math.abs(state.vy) * 0.15 + rand(2.5, 5.5)
     state.vr = rand(-4, 4)
+  })
+}
+
+function revivePals() {
+  palsDrained = false
+  palState.forEach((state) => {
+    if (!state.alive || state.caught) return
+    state.vx = rand(-3.2, 3.2)
+    state.vy = rand(-9.5, -5.2)
+    state.vr = rand(-6, 6)
   })
 }
 
@@ -358,7 +363,8 @@ function onBrandClick() {
 function onBrandDblClick(event: MouseEvent) {
   event.preventDefault()
   closeMenu()
-  drainPals()
+  if (palsDrained) revivePals()
+  else drainPals()
 }
 
 function onPointerLeave() {
@@ -366,8 +372,14 @@ function onPointerLeave() {
   palState.forEach((state) => {
     if (!state.caught) return
     state.caught = false
-    state.vx = rand(-2.4, 2.4)
-    state.vy = rand(-2.8, -1.2)
+    if (palsDrained) {
+      state.vx = rand(-1.6, 1.6)
+      state.vy = rand(1.2, 3.4)
+      state.vr = rand(-3, 3)
+    } else {
+      state.vx = rand(-2.4, 2.4)
+      state.vy = rand(-2.8, -1.2)
+    }
   })
 }
 
@@ -463,7 +475,7 @@ function tickPals(now: number) {
       state.opacity += (1 - state.opacity) * 0.14
     }
 
-    if (state.caught && mouse.active && !palsDrained) {
+    if (state.caught && mouse.active) {
       const slot = followSlot
       followSlot += 1
       const angle = t * 0.9 + slot * ((Math.PI * 2) / Math.max(1, caughtTotal))
