@@ -57,24 +57,23 @@ const menuGroups = [
 /** hero rotating words */
 const heroWords = ['기업을', '매장을', '브랜드를']
 
-const marqueeImgs = Array.from(
-  { length: 12 },
-  (_, i) => `https://static-v2.imweb.me/io/home/ai-marquee-img-${i + 1}.png`,
+const marqueeImgs = Array.from({ length: 12 }, (_, i) =>
+  asset(`examples/hero-${String(i + 1).padStart(2, '0')}.svg`),
 )
 
 const templates = [
-  { name: '기업 소개', tag: '반응형 웹', img: 'https://static-v2.imweb.me/io/home/business-template-1.png' },
-  { name: '쇼핑몰', tag: '모바일 커머스', img: 'https://static-v2.imweb.me/io/home/shopping-template-1.png' },
-  { name: '예약·문의', tag: '서비스 사이트', img: 'https://static-v2.imweb.me/io/home/reservation-template-1.png' },
-  { name: '포트폴리오', tag: '에이전시', img: 'https://static-v2.imweb.me/io/home/portfolio-template-1.png' },
-  { name: '커뮤니티', tag: '회원·게시판', img: 'https://static-v2.imweb.me/io/home/community-template-1.png' },
-  { name: '브랜드 스토어', tag: '반응형 웹', img: 'https://static-v2.imweb.me/io/home/shopping-template-2.png' },
-  { name: '비즈니스', tag: '기업 홈페이지', img: 'https://static-v2.imweb.me/io/home/business-template-2.png' },
-  { name: '미디어', tag: '블로그·뉴스', img: 'https://static-v2.imweb.me/io/home/blog-template-1.png' },
-  { name: '이벤트', tag: '랜딩 페이지', img: 'https://static-v2.imweb.me/io/home/event-template-1.png' },
-  { name: '카탈로그', tag: '제품 소개', img: 'https://static-v2.imweb.me/io/home/business-template-3.png' },
-  { name: '제품 소개', tag: '모바일 웹', img: 'https://static-v2.imweb.me/io/home/shopping-template-3.png' },
-  { name: '브랜드', tag: '반응형 웹', img: 'https://static-v2.imweb.me/io/home/portfolio-template-2.png' },
+  { name: '기업 소개', tag: '반응형 웹', img: asset('examples/site-01.svg') },
+  { name: '쇼핑몰', tag: '모바일 커머스', img: asset('examples/site-02.svg') },
+  { name: '예약·문의', tag: '서비스 사이트', img: asset('examples/site-03.svg') },
+  { name: '포트폴리오', tag: '에이전시', img: asset('examples/site-04.svg') },
+  { name: '커뮤니티', tag: '회원·게시판', img: asset('examples/site-05.svg') },
+  { name: '브랜드 스토어', tag: '반응형 웹', img: asset('examples/site-06.svg') },
+  { name: '비즈니스', tag: '기업 홈페이지', img: asset('examples/site-07.svg') },
+  { name: '미디어', tag: '블로그·뉴스', img: asset('examples/site-08.svg') },
+  { name: '이벤트', tag: '랜딩 페이지', img: asset('examples/site-09.svg') },
+  { name: '카탈로그', tag: '제품 소개', img: asset('examples/site-10.svg') },
+  { name: '제품 소개', tag: '모바일 웹', img: asset('examples/site-11.svg') },
+  { name: '브랜드', tag: '반응형 웹', img: asset('examples/site-12.svg') },
 ]
 
 const templateLoop = computed(() => [...templates, ...templates])
