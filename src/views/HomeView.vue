@@ -25,56 +25,18 @@ const consultForm = ref({
 const consultSending = ref(false)
 const consultStatus = ref<'idle' | 'ok' | 'err'>('idle')
 
-const PAL_KINDS = [
-  'star',
-  'heart',
-  'spark',
-  'circle',
-  'moon',
-  'bolt',
-  'diamond',
-  'triangle',
-  'clover',
-  'ring',
-] as const
-type PalKind = (typeof PAL_KINDS)[number]
-const PAL_MAX = PAL_KINDS.length
+const PAL_MAX = 20
+const PAL_SIZES = [34, 30, 32, 31, 36, 33, 30, 35, 32, 34, 33, 36, 30, 34, 32, 31, 35, 33, 30, 34]
 
-const PAL_SIZES: Record<PalKind, number> = {
-  star: 28,
-  heart: 24,
-  spark: 22,
-  circle: 22,
-  moon: 24,
-  bolt: 22,
-  diamond: 24,
-  triangle: 24,
-  clover: 26,
-  ring: 24,
-}
-
-const PAL_PATHS: Record<PalKind, string> = {
-  star: 'M12 2.4l2.7 6.2 6.7.7-5 4.5 1.4 6.6L12 17.4 6.2 20.4l1.4-6.6-5-4.5 6.7-.7L12 2.4z',
-  heart:
-    'M12 20.4S3.6 14.8 3.6 9.7A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.4 2.5c0 5.1-8.4 10.7-8.4 10.7z',
-  spark: 'M12 1.5l1.5 7.2L21 10l-7.5 1.3L12 18.5l-1.5-7.2L3 10l7.5-1.3L12 1.5z',
-  circle: 'M12 3.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6z',
-  moon: 'M15.4 2.2A8.8 8.8 0 1 0 21.8 14 7.2 7.2 0 0 1 15.4 2.2z',
-  bolt: 'M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z',
-  diamond: 'M12 2.8 20.5 12 12 21.2 3.5 12 12 2.8z',
-  triangle: 'M12 3.2 21.2 20.2H2.8L12 3.2z',
-  clover:
-    'M12 2.8c-1.8 0-3.2 1.8-3.2 3.6 0 1.1.5 2.1 1.3 2.8C8.8 8.4 7 7.8 5.6 8.8S4.2 12 6.2 13c-2 .6-2.8 2.6-1.8 4s3.2 1.4 4.4.2c-.2 1.8.8 3.6 2.6 3.6H12v2.4h0V21c1.8 0 2.8-1.8 2.6-3.6 1.2 1.2 3 .8 4.4-.2s.2-3.4-1.8-4c2-1 2.4-3.2 1-4.2s-3.2-.4-4.5.4c.8-.7 1.3-1.7 1.3-2.8 0-1.8-1.4-3.6-3.2-3.6H12z',
-  ring: 'M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6zm0 2.8a5 5 0 1 1 0 10 5 5 0 0 1 0-10z',
-}
-
-const cursorPals = PAL_KINDS.map((kind, i) => ({
-  id: `pal-${kind}`,
-  kind,
-  size: PAL_SIZES[kind],
-  followLag: 0.035 + i * 0.006,
-  path: PAL_PATHS[kind],
-}))
+const cursorPals = Array.from({ length: PAL_MAX }, (_, i) => {
+  const n = String(i + 1).padStart(2, '0')
+  return {
+    id: `pal-${n}`,
+    size: PAL_SIZES[i] ?? 32,
+    followLag: 0.032 + i * 0.004,
+    src: asset(`pals/pal-${n}.png`),
+  }
+})
 
 const mouse = { x: 0, y: 0, active: false }
 const CATCH_RADIUS = 54
@@ -691,12 +653,9 @@ onUnmounted(() => {
         v-for="pal in cursorPals"
         :key="pal.id"
         class="cursor-pal"
-        :class="`is-${pal.kind}`"
         :style="{ width: `${pal.size}px`, height: `${pal.size}px` }"
       >
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path :d="pal.path" />
-        </svg>
+        <img :src="pal.src" alt="" draggable="false" />
       </div>
     </div>
 
@@ -1162,41 +1121,13 @@ onUnmounted(() => {
 .cursor-pals.follow .cursor-pal {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
 }
-.cursor-pal.svg,
-.cursor-pal svg {
+.cursor-pal img {
   width: 100%;
   height: 100%;
   display: block;
-}
-.cursor-pal.is-star {
-  color: #fee500;
-}
-.cursor-pal.is-heart {
-  color: #ff5a7a;
-}
-.cursor-pal.is-spark {
-  color: #ff8a3d;
-}
-.cursor-pal.is-circle {
-  color: #3b82f6;
-}
-.cursor-pal.is-moon {
-  color: #8b5cf6;
-}
-.cursor-pal.is-bolt {
-  color: #06b6d4;
-}
-.cursor-pal.is-diamond {
-  color: #22c55e;
-}
-.cursor-pal.is-triangle {
-  color: #f43f5e;
-}
-.cursor-pal.is-clover {
-  color: #16a34a;
-}
-.cursor-pal.is-ring {
-  color: #f59e0b;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 .cursor-pal.is-follow {
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
