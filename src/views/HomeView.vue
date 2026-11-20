@@ -1077,16 +1077,16 @@ onUnmounted(() => {
 @keyframes bob-dot {
   0%,
   100% {
-    transform: translateY(3px) scale(1);
+    transform: translateY(0) scale(1);
   }
   18% {
-    transform: translateY(5px) scale(1.12, 0.88);
+    transform: translateY(0) scale(1.1, 0.9);
   }
   40% {
     transform: translateY(-8px) scale(0.94, 1.22);
   }
   58% {
-    transform: translateY(1px) scale(1.06, 0.94);
+    transform: translateY(0) scale(1.05, 0.95);
   }
   75% {
     transform: translateY(-3px) scale(0.98, 1.08);
@@ -1612,7 +1612,7 @@ onUnmounted(() => {
 .hero-ring {
   position: absolute;
   left: 0;
-  top: 50%;
+  top: 58%;
   width: 100%;
   height: clamp(360px, 56vw, 680px);
   transform: translateY(-50%);
