@@ -10,6 +10,23 @@ const menuOpen = ref(false)
 const scrolled = ref(false)
 const ready = ref(false)
 const heroWord = ref(0)
+const palsOn = ref(false)
+const palsRoot = ref<HTMLElement | null>(null)
+
+const cursorPals = [
+  { id: 'star', kind: 'star' as const, size: 34, lag: 0.12 },
+  { id: 'spark', kind: 'spark' as const, size: 22, lag: 0.08 },
+  { id: 'blob', kind: 'blob' as const, size: 26, lag: 0.06 },
+  { id: 'heart', kind: 'heart' as const, size: 24, lag: 0.09 },
+  { id: 'bolt', kind: 'bolt' as const, size: 20, lag: 0.05 },
+]
+
+const mouse = { x: 0, y: 0 }
+const palState = cursorPals.map(() => ({ x: -80, y: -80, rot: 0 }))
+let palsRaf = 0
+let palsTime = 0
+let palsReduceMotion = false
+let palNodes: HTMLElement[] = []
 
 const contact = {
   company: '모든시스템즈',
@@ -156,6 +173,37 @@ let menuCloseTimer = 0
 let heroTimer = 0
 let revealObserver: IntersectionObserver | null = null
 
+function onPointerMove(event: PointerEvent) {
+  mouse.x = event.clientX
+  mouse.y = event.clientY
+  if (!palsOn.value) palsOn.value = true
+}
+
+function tickPals(now: number) {
+  const dt = Math.min(32, now - (palsTime || now))
+  palsTime = now
+  const t = now / 1000
+
+  cursorPals.forEach((pal, i) => {
+    const state = palState[i]
+    const orbitX = Math.cos(t * (1.1 + i * 0.17) + i) * (18 + i * 10)
+    const orbitY = Math.sin(t * (1.4 + i * 0.13) + i * 1.3) * (14 + i * 8)
+    const bob = Math.sin(t * 3.2 + i * 1.7) * 6
+    const targetX = mouse.x + orbitX + (i - 2) * 14
+    const targetY = mouse.y + orbitY + bob - 18
+    const ease = 1 - (1 - pal.lag) ** (dt / 16.67)
+    state.x += (targetX - state.x) * ease
+    state.y += (targetY - state.y) * ease
+    state.rot += (Math.sin(t * 2 + i) * 18 - state.rot) * 0.08
+    const node = palNodes[i]
+    if (node) {
+      node.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) translate(-50%, -50%) rotate(${state.rot}deg)`
+    }
+  })
+
+  palsRaf = window.requestAnimationFrame(tickPals)
+}
+
 function setMenuOpen(open: boolean) {
   window.clearTimeout(menuCloseTimer)
   if (open) {
@@ -219,9 +267,20 @@ onMounted(() => {
     heroWord.value = (heroWord.value + 1) % heroWords.length
   }, 2800)
 
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  palsReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  if (!palsReduceMotion && finePointer) {
+    mouse.x = window.innerWidth * 0.55
+    mouse.y = 160
+    palNodes = palsRoot.value
+      ? Array.from(palsRoot.value.querySelectorAll<HTMLElement>('.cursor-pal'))
+      : []
+    window.addEventListener('pointermove', onPointerMove, { passive: true })
+    palsRaf = window.requestAnimationFrame(tickPals)
+  }
+
   const revealEls = document.querySelectorAll('.bounce-in')
-  if (reduceMotion) {
+  if (palsReduceMotion) {
     revealEls.forEach((el) => el.classList.add('is-in'))
   } else {
     revealObserver = new IntersectionObserver(
@@ -241,6 +300,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('pointermove', onPointerMove)
+  window.cancelAnimationFrame(palsRaf)
   window.clearTimeout(menuCloseTimer)
   window.clearInterval(heroTimer)
   revealObserver?.disconnect()
@@ -250,6 +311,43 @@ onUnmounted(() => {
 
 <template>
   <div class="page" :class="{ ready, 'menu-open': menuOpen }">
+    <div
+      ref="palsRoot"
+      class="cursor-pals"
+      :class="{ on: palsOn && !menuOpen }"
+      aria-hidden="true"
+    >
+      <div
+        v-for="pal in cursorPals"
+        :key="pal.id"
+        class="cursor-pal"
+        :class="`is-${pal.kind}`"
+        :style="{ width: `${pal.size}px`, height: `${pal.size}px` }"
+      >
+        <svg v-if="pal.kind === 'star'" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 2.4l2.7 6.2 6.7.7-5 4.5 1.4 6.6L12 17.4 6.2 20.4l1.4-6.6-5-4.5 6.7-.7L12 2.4z"
+          />
+        </svg>
+        <svg v-else-if="pal.kind === 'spark'" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 1l1.6 7.4L21 10l-7.4 1.6L12 19l-1.6-7.4L3 10l7.4-1.6L12 1z" />
+        </svg>
+        <svg v-else-if="pal.kind === 'blob'" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 3c3.2 0 6 2.2 6.7 5.2.9-.3 1.9.1 2.3 1 1.1 2.3-.4 5.1-2.8 6.1-1 2.8-3.7 4.7-6.7 4.7-4.1 0-7.5-3.2-7.5-7.2C4 7.8 7.5 3 12 3z"
+          />
+        </svg>
+        <svg v-else-if="pal.kind === 'heart'" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 20.4S3.6 14.8 3.6 9.7A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.4 2.5c0 5.1-8.4 10.7-8.4 10.7z"
+          />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z" />
+        </svg>
+      </div>
+    </div>
+
     <!-- ===== KEEP: header ===== -->
     <header class="nav on-hero" :class="{ 'is-down': scrolled }">
       <a class="brand" href="#top" @click="closeMenu" aria-label="모든시스템즈">
@@ -576,6 +674,70 @@ onUnmounted(() => {
 .bounce-in.is-in {
   opacity: 1;
   transform: none;
+}
+
+.cursor-pals {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.cursor-pals.on {
+  opacity: 1;
+}
+.cursor-pal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.12));
+  animation: pal-bob 1.6s var(--ease-bounce) infinite;
+}
+.cursor-pal svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.cursor-pal.is-star {
+  color: #fee500;
+  animation-delay: 0s;
+}
+.cursor-pal.is-spark {
+  color: #f59e0b;
+  animation-delay: 0.15s;
+}
+.cursor-pal.is-blob {
+  color: #111;
+  animation-delay: 0.3s;
+}
+.cursor-pal.is-heart {
+  color: #fb7185;
+  animation-delay: 0.45s;
+}
+.cursor-pal.is-bolt {
+  color: #38bdf8;
+  animation-delay: 0.6s;
+}
+@keyframes pal-bob {
+  0%,
+  100% {
+    scale: 1;
+  }
+  40% {
+    scale: 1.18;
+  }
+  65% {
+    scale: 0.92;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .cursor-pals {
+    display: none;
+  }
 }
 
 /* ——— HEADER (imweb: white) ——— */
@@ -1555,10 +1717,12 @@ onUnmounted(() => {
   grid-auto-columns: minmax(280px, 360px);
   gap: 48px;
   overflow-x: auto;
-  /* overflow-x:auto forces y clip — pad so hover scale/lift isn't cut off */
-  padding: 28px 8px 36px;
-  margin: -28px -8px -24px;
+  overflow-y: hidden;
+  /* overflow-x clips both axes — keep room for scale(1.05) on first/last cards */
+  padding: 36px 48px 44px;
+  margin: -20px -28px -20px;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: 48px;
   -webkit-overflow-scrolling: touch;
 }
 .easy-card {
@@ -1566,8 +1730,18 @@ onUnmounted(() => {
   transform-origin: center center;
   transition: transform 0.5s var(--ease-bounce);
 }
+.easy-card:first-child {
+  transform-origin: left center;
+}
+.easy-card:last-child {
+  transform-origin: right center;
+}
 .easy-card:hover {
-  transform: translateY(-10px) scale(1.05);
+  transform: translateY(-8px) scale(1.05);
+}
+.easy-card:first-child:hover {
+  transform: translateY(-8px) scale(1.05);
+  transform-origin: left center;
 }
 .easy-frame {
   padding: 0;
