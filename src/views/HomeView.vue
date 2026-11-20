@@ -115,10 +115,14 @@ function rand(min: number, max: number) {
 function getDotOrigin() {
   const el = brandDotRef.value
   if (!el) {
-    return { x: 96, y: 44 }
+    return { x: 96, y: 36 }
   }
+  // spawn from the top of the (possibly scaled) brand-dot
   const rect = el.getBoundingClientRect()
-  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + Math.max(2, rect.height * 0.12),
+  }
 }
 
 function syncDotAnimation(now: number) {
@@ -132,18 +136,19 @@ function syncDotAnimation(now: number) {
 
 function spawnPal(index: number, now: number) {
   const origin = getDotOrigin()
-  const angle = rand(-Math.PI * 0.2, Math.PI * 0.95)
-  const speed = rand(3.4, 6.8)
+  // burst upward/out from the enlarged dot
+  const angle = rand((-Math.PI * 5) / 6, -Math.PI / 6)
+  const speed = rand(4.2, 7.2)
   const state = palState[index]
   state.alive = true
   state.caught = false
   state.x = origin.x
   state.y = origin.y
-  state.vx = Math.cos(angle) * speed
-  state.vy = Math.sin(angle) * speed + rand(0.8, 2.4)
-  state.rot = rand(-20, 20)
-  state.vr = rand(-4, 4)
-  state.scale = 0.2
+  state.vx = Math.cos(angle) * speed + rand(-0.6, 0.6)
+  state.vy = Math.sin(angle) * speed
+  state.rot = rand(-24, 24)
+  state.vr = rand(-5, 5)
+  state.scale = 0.15
   state.opacity = 0
   state.bornAt = now
 }
@@ -357,10 +362,11 @@ function tickPals(now: number) {
     if (!state.alive || !node) return
 
     const age = now - state.bornAt
-    if (age < 280) {
-      const p = age / 280
-      state.opacity = Math.min(1, p * 1.2)
-      state.scale = 0.25 + Math.sin(p * Math.PI) * 0.95
+    if (age < 320) {
+      const p = age / 320
+      state.opacity = Math.min(1, 0.2 + p * 1.1)
+      // pop out of the dot: tiny → overshoot → settle
+      state.scale = 0.12 + Math.sin(Math.min(1, p * 1.15) * Math.PI) * 1.05
     } else {
       state.opacity += (1 - state.opacity) * 0.12
     }
@@ -886,7 +892,8 @@ onUnmounted(() => {
 .cursor-pals {
   position: fixed;
   inset: 0;
-  z-index: 25;
+  /* above header so icons pop out of the logo dot visibly */
+  z-index: 35;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -962,12 +969,19 @@ onUnmounted(() => {
   align-items: center;
   gap: 2rem;
   padding: 0 clamp(16px, 5vw, 48px);
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  transition: box-shadow 0.25s ease;
+  background: rgba(255, 255, 255, 0.42);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
 .nav.is-down {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.62);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .brand {
@@ -1000,10 +1014,10 @@ onUnmounted(() => {
     transform: translateY(0) scale(1);
   }
   40% {
-    transform: translateY(-7px) scale(1.72);
+    transform: translateY(-3px) scale(1.22);
   }
   65% {
-    transform: translateY(2px) scale(0.92);
+    transform: translateY(1px) scale(0.96);
   }
 }
 .brand-sub {
