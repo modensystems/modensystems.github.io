@@ -876,7 +876,7 @@ onUnmounted(() => {
       </section>
 
       <!-- CTA -->
-      <section class="cta bounce-in" data-auto-hover=".btn-start">
+      <section class="cta bounce-in">
         <h2>홈페이지·반응형 웹이 필요하시면<br />편하게 문의해 주세요</h2>
         <a class="btn-start" :href="`mailto:${contact.email}`">상담 문의</a>
       </section>
@@ -1077,13 +1077,19 @@ onUnmounted(() => {
 @keyframes bob-dot {
   0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(3px) scale(1);
+  }
+  18% {
+    transform: translateY(5px) scale(1.12, 0.88);
   }
   40% {
-    transform: translateY(-3px) scale(1.22);
+    transform: translateY(-8px) scale(0.94, 1.22);
   }
-  65% {
-    transform: translateY(1px) scale(0.96);
+  58% {
+    transform: translateY(1px) scale(1.06, 0.94);
+  }
+  75% {
+    transform: translateY(-3px) scale(0.98, 1.08);
   }
 }
 .brand-sub {
@@ -1606,9 +1612,10 @@ onUnmounted(() => {
 .hero-ring {
   position: absolute;
   left: 0;
-  top: 72px;
+  top: 50%;
   width: 100%;
   height: clamp(360px, 56vw, 680px);
+  transform: translateY(-50%);
   perspective: 1200px;
   overflow-x: clip;
   overflow-y: visible;
@@ -1840,7 +1847,7 @@ onUnmounted(() => {
     transform 0.45s var(--ease-bounce),
     box-shadow 0.35s ease;
 }
-.btn-start:is(:hover, .is-auto-hover) {
+.btn-start:hover {
   background: #fee500;
   color: #191919;
   transform: translateY(-5px) scale(1.05);
