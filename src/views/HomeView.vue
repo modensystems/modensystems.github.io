@@ -336,6 +336,23 @@ function onPointerLeave() {
   })
 }
 
+function dismissPal(index: number) {
+  const state = palState[index]
+  if (!state?.alive) return
+  state.alive = false
+  state.caught = false
+  state.opacity = 0
+  state.scale = 0
+
+  // all cleared after a full round → spawn again one by one
+  if (spawnedCount >= PAL_MAX && palState.every((s) => !s.alive)) {
+    spawnedCount = 0
+    const now = performance.now()
+    syncDotAnimation(now)
+    nextSpawnAt = now + DOT_PEAK_MS
+  }
+}
+
 function tickPals(now: number) {
   const dt = Math.min(34, now - (lastTick || now)) / 16.67
   lastTick = now
@@ -650,10 +667,11 @@ onUnmounted(() => {
       aria-hidden="true"
     >
       <div
-        v-for="pal in cursorPals"
+        v-for="(pal, i) in cursorPals"
         :key="pal.id"
         class="cursor-pal"
         :style="{ width: `${pal.size}px`, height: `${pal.size}px` }"
+        @click.stop.prevent="dismissPal(i)"
       >
         <img :src="pal.src" alt="" draggable="false" />
       </div>
@@ -1116,7 +1134,8 @@ onUnmounted(() => {
   will-change: transform, opacity;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.12));
   transition: filter 0.3s ease;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 .cursor-pals.follow .cursor-pal {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
