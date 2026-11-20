@@ -58,6 +58,33 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* labautolink-style thin scrollbar, brand yellow */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--yellow);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--yellow-deep);
+}
+::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  display: none;
+}
+@supports (-moz-appearance: none) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--yellow) transparent;
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font);
