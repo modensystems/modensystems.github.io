@@ -125,6 +125,10 @@ ol {
   min-height: 100vh;
 }
 
+body.consult-open {
+  overflow: hidden;
+}
+
 ::selection {
   background: var(--yellow);
   color: var(--ink);

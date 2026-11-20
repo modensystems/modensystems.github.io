@@ -7,6 +7,7 @@ function asset(path: string) {
 }
 
 const menuOpen = ref(false)
+const consultOpen = ref(false)
 const scrolled = ref(false)
 const ready = ref(false)
 const heroWord = ref(0)
@@ -14,6 +15,18 @@ const palsOn = ref(false)
 const palsFollowing = ref(false)
 const palsRoot = ref<HTMLElement | null>(null)
 const brandDotRef = ref<HTMLElement | null>(null)
+
+const FLOWEB_KAKAO = 'https://pf.kakao.com/_xlNbxeX/chat'
+const FLOWEB_QR = 'https://floweb.ai/brand/kakao-chat-qr-v1.svg'
+
+const consultForm = ref({
+  phone: '',
+  method: 'sms' as 'sms' | 'call',
+  site: '',
+  reference: '',
+})
+const consultSending = ref(false)
+const consultStatus = ref<'idle' | 'ok' | 'err'>('idle')
 
 const PAL_KINDS = [
   'star',
@@ -24,7 +37,7 @@ const PAL_KINDS = [
   'bolt',
   'diamond',
   'triangle',
-  'square',
+  'clover',
   'ring',
 ] as const
 type PalKind = (typeof PAL_KINDS)[number]
@@ -39,7 +52,7 @@ const PAL_SIZES: Record<PalKind, number> = {
   bolt: 22,
   diamond: 24,
   triangle: 24,
-  square: 22,
+  clover: 26,
   ring: 24,
 }
 
@@ -53,7 +66,8 @@ const PAL_PATHS: Record<PalKind, string> = {
   bolt: 'M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z',
   diamond: 'M12 2.8 20.5 12 12 21.2 3.5 12 12 2.8z',
   triangle: 'M12 3.2 21.2 20.2H2.8L12 3.2z',
-  square: 'M5 5h14v14H5z',
+  clover:
+    'M12 2.8c-1.8 0-3.2 1.8-3.2 3.6 0 1.1.5 2.1 1.3 2.8C8.8 8.4 7 7.8 5.6 8.8S4.2 12 6.2 13c-2 .6-2.8 2.6-1.8 4s3.2 1.4 4.4.2c-.2 1.8.8 3.6 2.6 3.6H12v2.4h0V21c1.8 0 2.8-1.8 2.6-3.6 1.2 1.2 3 .8 4.4-.2s.2-3.4-1.8-4c2-1 2.4-3.2 1-4.2s-3.2-.4-4.5.4c.8-.7 1.3-1.7 1.3-2.8 0-1.8-1.4-3.6-3.2-3.6H12z',
   ring: 'M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6zm0 2.8a5 5 0 1 1 0 10 5 5 0 0 1 0-10z',
 }
 
@@ -165,7 +179,7 @@ const contact = {
 const navLinks = [
   { label: '서비스', href: '#works' },
   { label: '포트폴리오', href: '#template-list' },
-  { label: '서비스안내', href: '#services' },
+  { label: '안내', href: '#services' },
   { label: 'ABOUT', href: '#systems' },
 ]
 
@@ -187,7 +201,7 @@ const menuGroups = [
     ],
   },
   {
-    title: '서비스안내',
+    title: '안내',
     links: [
       { label: '반응형 모바일 웹', href: '#services' },
       { label: '홈페이지 제작·운영', href: '#services' },
@@ -293,7 +307,7 @@ const footerCols = [
     links: ['기업·매장 홈페이지', '예약·문의 페이지', '랜딩·소개 페이지', '포트폴리오'],
   },
   {
-    title: '서비스안내',
+    title: '안내',
     links: ['상담·요구사항', '견적·일정', '제작·구축', '검수·오픈'],
   },
   {
@@ -490,6 +504,63 @@ function closeMenu() {
   setMenuOpen(false)
 }
 
+function openConsult(event?: Event) {
+  event?.preventDefault()
+  closeMenu()
+  consultStatus.value = 'idle'
+  consultOpen.value = true
+  document.body.classList.add('consult-open')
+}
+
+function closeConsult() {
+  consultOpen.value = false
+  document.body.classList.remove('consult-open')
+  consultSending.value = false
+}
+
+async function submitConsult(event?: Event) {
+  event?.preventDefault()
+  if (consultSending.value) return
+
+  const phone = consultForm.value.phone.trim()
+  if (!phone) {
+    window.alert('휴대폰 번호를 입력해 주세요.')
+    return
+  }
+
+  const methodLabel = consultForm.value.method === 'call' ? '전화' : '문자'
+  consultSending.value = true
+  consultStatus.value = 'idle'
+
+  try {
+    const res = await fetch(`https://formsubmit.co/ajax/${contact.email}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        _subject: `[상담문의] ${contact.company} 홈페이지 문의`,
+        _template: 'table',
+        _captcha: 'false',
+        휴대폰번호: phone,
+        연락방법: methodLabel,
+        만들고싶은사이트: consultForm.value.site.trim() || '-',
+        참고사이트: consultForm.value.reference.trim() || '-',
+        출처: typeof window !== 'undefined' ? window.location.href : 'mdsys',
+      }),
+    })
+
+    if (!res.ok) throw new Error(`submit failed: ${res.status}`)
+    consultStatus.value = 'ok'
+    consultForm.value = { phone: '', method: 'sms', site: '', reference: '' }
+  } catch {
+    consultStatus.value = 'err'
+  } finally {
+    consultSending.value = false
+  }
+}
+
 function onFullMenuClick(event: MouseEvent) {
   const target = event.target as HTMLElement | null
   if (!target) return
@@ -510,7 +581,12 @@ function onAskHover(event: MouseEvent) {
 }
 
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') closeMenu()
+  if (event.key !== 'Escape') return
+  if (consultOpen.value) {
+    closeConsult()
+    return
+  }
+  closeMenu()
 }
 
 watch(menuOpen, (open) => {
@@ -602,6 +678,7 @@ onUnmounted(() => {
   revealObserver?.disconnect()
   autoHoverObserver?.disconnect()
   document.body.classList.remove('menu-open')
+  document.body.classList.remove('consult-open')
 })
 </script>
 
@@ -641,7 +718,8 @@ onUnmounted(() => {
         <div class="nav-asks">
           <a
             class="btn-ask"
-            :href="`mailto:${contact.email}`"
+            href="#consult"
+            @click="openConsult"
             @mouseenter="onAskHover"
             @mouseout="onAskHover"
           >
@@ -692,7 +770,7 @@ onUnmounted(() => {
                 <p>반응형 모바일 웹 제작 전문 · 홈페이지 · 관리자 · 운영</p>
               </div>
               <div class="full-menu-meta effect-y last">
-                <a :href="`mailto:${contact.email}`" @click="closeMenu"
+                <a href="#consult" @click="openConsult"
                   >무료 상담 문의 <span aria-hidden="true">→</span></a
                 >
               </div>
@@ -738,7 +816,7 @@ onUnmounted(() => {
             반응형 웹·홈페이지를 기획부터 제작·운영까지 맡는 제작사입니다.
           </p>
           <div class="hero-actions">
-            <a class="btn-start" :href="`mailto:${contact.email}`">상담 문의</a>
+            <a class="btn-start" href="#consult" @click="openConsult">상담 문의</a>
             <a class="btn-ghost" href="#services">서비스 보기</a>
           </div>
         </div>
@@ -780,7 +858,7 @@ onUnmounted(() => {
         </div>
 
         <div class="tpl-cta bounce-in" style="--bounce-delay: 140ms">
-          <a class="btn-start" :href="`mailto:${contact.email}`">프로젝트 문의하기</a>
+          <a class="btn-start" href="#consult" @click="openConsult">프로젝트 문의하기</a>
         </div>
       </section>
 
@@ -881,9 +959,118 @@ onUnmounted(() => {
       <!-- CTA -->
       <section class="cta bounce-in">
         <h2>홈페이지·반응형 웹이 필요하시면<br />편하게 문의해 주세요</h2>
-        <a class="btn-start" :href="`mailto:${contact.email}`">상담 문의</a>
+        <a class="btn-start" href="#consult" @click="openConsult">상담 문의</a>
       </section>
     </main>
+
+    <div
+      v-if="consultOpen"
+      class="consult-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="consultTitle"
+      @click.self="closeConsult"
+    >
+      <div class="consult-modal">
+        <button class="consult-close" type="button" aria-label="닫기" @click="closeConsult">
+          ×
+        </button>
+        <h2 id="consultTitle">무료 상담, 어떻게 받으실래요?</h2>
+        <div class="consult-grid">
+          <div class="consult-pane consult-kakao">
+            <h3>
+              <img class="consult-kakao-icon" :src="asset('kakao-logo.svg')" alt="" />
+              카카오톡으로 즉시 문의
+            </h3>
+            <img class="consult-qr" :src="FLOWEB_QR" alt="카카오톡 문의 QR" />
+            <p>
+              휴대폰 카메라로 찍으면 카카오톡 채팅이 열려요. 상담 내용만 남겨 주시면 됩니다.
+            </p>
+            <a class="consult-kakao-link" :href="FLOWEB_KAKAO" target="_blank" rel="noopener noreferrer">
+              이 기기에서 카카오톡 열기
+            </a>
+          </div>
+          <form class="consult-pane consult-form" @submit="submitConsult">
+            <h3>번호만 남기면 먼저 연락드려요</h3>
+            <template v-if="consultStatus === 'ok'">
+              <p class="consult-success">
+                문의가 접수됐어요. {{ contact.email }} 으로 바로 전달했습니다.
+              </p>
+              <button class="consult-submit" type="button" @click="closeConsult">닫기</button>
+            </template>
+            <template v-else>
+              <label class="consult-field">
+                <span>휴대폰 번호</span>
+                <input
+                  v-model="consultForm.phone"
+                  type="tel"
+                  name="phone"
+                  placeholder="010-0000-0000"
+                  autocomplete="tel"
+                  required
+                  :disabled="consultSending"
+                />
+              </label>
+              <fieldset class="consult-field">
+                <legend>연락 받으실 방법</legend>
+                <div class="consult-methods">
+                  <label :class="{ on: consultForm.method === 'sms' }">
+                    <input
+                      v-model="consultForm.method"
+                      type="radio"
+                      name="method"
+                      value="sms"
+                      :disabled="consultSending"
+                    />
+                    문자
+                  </label>
+                  <label :class="{ on: consultForm.method === 'call' }">
+                    <input
+                      v-model="consultForm.method"
+                      type="radio"
+                      name="method"
+                      value="call"
+                      :disabled="consultSending"
+                    />
+                    전화
+                  </label>
+                </div>
+              </fieldset>
+              <label class="consult-field">
+                <span>만들고 싶은 사이트 (선택)</span>
+                <textarea
+                  v-model="consultForm.site"
+                  name="site"
+                  rows="2"
+                  placeholder="예: 시공 사례를 보여 주는 인테리어 업체 홈페이지"
+                  :disabled="consultSending"
+                />
+              </label>
+              <label class="consult-field">
+                <span>참고할 사이트 (있으면)</span>
+                <input
+                  v-model="consultForm.reference"
+                  type="text"
+                  name="reference"
+                  placeholder="주소나 이름, 예: www.example.co.kr"
+                  :disabled="consultSending"
+                />
+              </label>
+              <button class="consult-submit" type="submit" :disabled="consultSending">
+                {{ consultSending ? '보내는 중…' : '동의하고 연락 받기' }}
+              </button>
+              <p v-if="consultStatus === 'err'" class="consult-error">
+                전송에 실패했어요. 잠시 후 다시 시도하거나 {{ contact.email }} 으로 직접 문의해
+                주세요.
+              </p>
+              <p class="consult-note">
+                제출하면 {{ contact.email }} 으로 바로 전달됩니다. 상담은 무료예요.
+              </p>
+            </template>
+          </form>
+        </div>
+      </div>
+    </div>
 
     <footer id="company" class="footer">
       <div class="footer-inner">
@@ -1021,8 +1208,8 @@ onUnmounted(() => {
 .cursor-pal.is-triangle {
   color: #f43f5e;
 }
-.cursor-pal.is-square {
-  color: #191919;
+.cursor-pal.is-clover {
+  color: #16a34a;
 }
 .cursor-pal.is-ring {
   color: #f59e0b;
@@ -1123,7 +1310,7 @@ onUnmounted(() => {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    gap: 36px;
+    gap: 64px;
     height: 90px;
     align-items: center;
   }
@@ -1132,7 +1319,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 8px;
+    padding: 0 4px;
     height: 100%;
     font-size: 18px;
     font-weight: 600;
@@ -2289,6 +2476,208 @@ onUnmounted(() => {
 }
 .heart {
   color: #ef4444;
+}
+
+.consult-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 17, 17, 0.45);
+  backdrop-filter: blur(4px);
+}
+.consult-modal {
+  position: relative;
+  width: min(920px, 100%);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+  padding: 28px 28px 24px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+}
+.consult-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  color: #6b7280;
+}
+.consult-close:hover {
+  background: #f3f4f6;
+  color: #111;
+}
+.consult-modal > h2 {
+  margin: 0 40px 20px 0;
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #15181e;
+}
+.consult-grid {
+  display: grid;
+  gap: 18px;
+}
+@media (min-width: 800px) {
+  .consult-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+}
+.consult-pane {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #eceff3;
+  background: #fafafa;
+}
+.consult-pane h3 {
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #191919;
+}
+.consult-kakao-icon {
+  width: 18px;
+  height: 18px;
+}
+.consult-qr {
+  width: min(180px, 70%);
+  margin: 8px auto 14px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #eee;
+}
+.consult-pane p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #4b5563;
+}
+.consult-kakao-link {
+  display: inline-flex;
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #191919;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.consult-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.consult-field {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+.consult-field span,
+.consult-field legend {
+  padding: 0;
+}
+.consult-field input[type='tel'],
+.consult-field input[type='text'],
+.consult-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-weight: 500;
+  color: #191919;
+  resize: vertical;
+}
+.consult-field input:focus,
+.consult-field textarea:focus {
+  outline: 2px solid #fee500;
+  border-color: #fee500;
+}
+.consult-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.consult-methods label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+.consult-methods label.on {
+  border-color: #191919;
+  color: #191919;
+}
+.consult-methods input {
+  accent-color: #191919;
+}
+.consult-submit {
+  display: flex;
+  width: 100%;
+  margin-top: 20px;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border-radius: 12px;
+  background: #191919;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  transition:
+    background 0.25s var(--ease-bounce),
+    transform 0.25s var(--ease-bounce);
+}
+.consult-submit:hover {
+  background: #fee500;
+  color: #191919;
+  transform: translateY(-2px);
+}
+.consult-note {
+  margin-top: 4px !important;
+  font-size: 13px !important;
+  color: #9ca3af !important;
+  text-align: center;
+}
+.consult-success {
+  margin: 8px 0 4px !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  color: #191919 !important;
+}
+.consult-error {
+  margin: 0 !important;
+  font-size: 13px !important;
+  color: #dc2626 !important;
+  text-align: center;
+}
+.consult-submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
 }
 
 @media (min-width: 768px) {
