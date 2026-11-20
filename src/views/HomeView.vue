@@ -23,7 +23,7 @@ const consultForm = ref({
   reference: '',
 })
 const consultSending = ref(false)
-const consultStatus = ref<'idle' | 'err'>('idle')
+const consultStatus = ref<'idle' | 'ok' | 'err'>('idle')
 
 const PAL_KINDS = [
   'star',
@@ -550,7 +550,7 @@ async function submitConsult(event?: Event) {
 
     if (!res.ok) throw new Error(`submit failed: ${res.status}`)
     consultForm.value = { phone: '', method: 'sms', site: '', reference: '' }
-    closeConsult()
+    consultStatus.value = 'ok'
   } catch {
     consultStatus.value = 'err'
   } finally {
@@ -974,71 +974,82 @@ onUnmounted(() => {
         </button>
         <h2 id="consultTitle">무료 상담, 어떻게 받으실래요?</h2>
         <form class="consult-pane consult-form" @submit="submitConsult">
-          <h3>번호만 남기면 먼저 연락드려요</h3>
-          <label class="consult-field">
-            <span>휴대폰 번호</span>
-            <input
-              v-model="consultForm.phone"
-              type="tel"
-              name="phone"
-              placeholder="010-0000-0000"
-              autocomplete="tel"
-              required
-              :disabled="consultSending"
-            />
-          </label>
-          <fieldset class="consult-field">
-            <legend>연락 받으실 방법</legend>
-            <div class="consult-methods">
-              <label :class="{ on: consultForm.method === 'sms' }">
-                <input
-                  v-model="consultForm.method"
-                  type="radio"
-                  name="method"
-                  value="sms"
-                  :disabled="consultSending"
-                />
-                문자
-              </label>
-              <label :class="{ on: consultForm.method === 'call' }">
-                <input
-                  v-model="consultForm.method"
-                  type="radio"
-                  name="method"
-                  value="call"
-                  :disabled="consultSending"
-                />
-                전화
-              </label>
-            </div>
-          </fieldset>
-          <label class="consult-field">
-            <span>만들고 싶은 사이트 (선택)</span>
-            <textarea
-              v-model="consultForm.site"
-              name="site"
-              rows="2"
-              placeholder="예: 시공 사례를 보여 주는 인테리어 업체 홈페이지"
-              :disabled="consultSending"
-            />
-          </label>
-          <label class="consult-field">
-            <span>참고할 사이트 (있으면)</span>
-            <input
-              v-model="consultForm.reference"
-              type="text"
-              name="reference"
-              placeholder="주소나 이름, 예: www.example.co.kr"
-              :disabled="consultSending"
-            />
-          </label>
-          <button class="consult-submit" type="submit" :disabled="consultSending">
-            {{ consultSending ? '보내는 중…' : '동의하고 연락 받기' }}
-          </button>
-          <p v-if="consultStatus === 'err'" class="consult-error">
-            전송에 실패했어요. 잠시 후 다시 시도해 주세요.
-          </p>
-          <p class="consult-note">상담은 무료예요.</p>
+          <template v-if="consultStatus === 'ok'">
+            <h3>문의가 접수됐어요</h3>
+            <p class="consult-success">빠르게 확인한 뒤 남겨 주신 번호로 연락드릴게요.</p>
+            <button class="consult-submit" type="button" @click="closeConsult">닫기</button>
+          </template>
+          <template v-else>
+            <h3>번호만 남기면 먼저 연락드려요</h3>
+            <label class="consult-field">
+              <span>휴대폰 번호</span>
+              <input
+                v-model="consultForm.phone"
+                type="tel"
+                name="phone"
+                placeholder="010-0000-0000"
+                autocomplete="tel"
+                required
+                :disabled="consultSending"
+              />
+            </label>
+            <fieldset class="consult-field">
+              <legend>연락 받으실 방법</legend>
+              <div class="consult-methods">
+                <label :class="{ on: consultForm.method === 'sms' }">
+                  <input
+                    v-model="consultForm.method"
+                    type="radio"
+                    name="method"
+                    value="sms"
+                    :disabled="consultSending"
+                  />
+                  문자
+                </label>
+                <label :class="{ on: consultForm.method === 'call' }">
+                  <input
+                    v-model="consultForm.method"
+                    type="radio"
+                    name="method"
+                    value="call"
+                    :disabled="consultSending"
+                  />
+                  전화
+                </label>
+              </div>
+            </fieldset>
+            <label class="consult-field">
+              <span>만들고 싶은 사이트 (선택)</span>
+              <textarea
+                v-model="consultForm.site"
+                name="site"
+                rows="2"
+                placeholder="예: 시공 사례를 보여 주는 인테리어 업체 홈페이지"
+                :disabled="consultSending"
+              />
+            </label>
+            <label class="consult-field">
+              <span>참고할 사이트 (있으면)</span>
+              <input
+                v-model="consultForm.reference"
+                type="text"
+                name="reference"
+                placeholder="주소나 이름, 예: www.example.co.kr"
+                :disabled="consultSending"
+              />
+            </label>
+            <p class="consult-privacy">
+              <RouterLink to="/privacy" target="_blank">개인정보 수집과 이용</RouterLink>
+              내용을 확인해 주세요.
+            </p>
+            <button class="consult-submit" type="submit" :disabled="consultSending">
+              {{ consultSending ? '보내는 중…' : '동의하고 연락 받기' }}
+            </button>
+            <p v-if="consultStatus === 'err'" class="consult-error">
+              전송에 실패했어요. 잠시 후 다시 시도해 주세요.
+            </p>
+            <p class="consult-note">상담은 무료예요.</p>
+          </template>
         </form>
       </div>
     </div>
@@ -1065,6 +1076,8 @@ onUnmounted(() => {
               상호명 : {{ contact.company }} · 이메일 :
               <a :href="`mailto:${contact.email}`">{{ contact.email }}</a>
               · 주소 : {{ contact.address }}
+              ·
+              <RouterLink to="/privacy">개인정보처리방침</RouterLink>
             </p>
             <p>
               반응형 모바일 웹 페이지 제작 전문 · 홈페이지 제작·운영 · 유지보수
@@ -2583,6 +2596,28 @@ onUnmounted(() => {
   background: #fee500;
   color: #191919;
   transform: translateY(-2px);
+}
+.consult-privacy {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+  text-align: center;
+}
+.consult-privacy a {
+  color: #191919;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.consult-privacy a:hover {
+  color: #111;
+}
+.consult-success {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #374151;
 }
 .consult-note {
   margin-top: 4px !important;
