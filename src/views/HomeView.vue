@@ -582,7 +582,7 @@ onMounted(() => {
       { threshold: 0.28, rootMargin: '-10% 0px -10% 0px' },
     )
     autoSections.forEach((section) => autoHoverObserver?.observe(section))
-    autoHoverTimer = window.setInterval(tickAutoHover, 1000)
+    autoHoverTimer = window.setInterval(tickAutoHover, 1500)
   }
 })
 
@@ -1540,7 +1540,7 @@ onUnmounted(() => {
   position: relative;
   z-index: 3;
   width: min(100% - 40px, 760px);
-  margin: 0 auto;
+  margin: auto;
   padding: 40px 36px 32px;
   text-align: center;
   background: rgba(255, 255, 255, 0.18);
@@ -1606,7 +1606,7 @@ onUnmounted(() => {
 .hero-ring {
   position: absolute;
   left: 0;
-  top: 46%;
+  top: 72px;
   width: 100%;
   height: clamp(360px, 56vw, 680px);
   perspective: 1200px;
