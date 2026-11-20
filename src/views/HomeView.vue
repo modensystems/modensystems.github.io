@@ -195,22 +195,22 @@ const menuGroups = [
 const heroWords = ['기업을', '매장을', '브랜드를']
 
 const marqueeImgs = Array.from({ length: 12 }, (_, i) =>
-  asset(`examples/hero-${String(i + 1).padStart(2, '0')}.svg`),
+  asset(`examples/hero-${String(i + 1).padStart(2, '0')}.jpg`),
 )
 
 const templates = [
-  { name: '기업 소개', tag: '반응형 웹', img: asset('examples/site-01.svg') },
-  { name: '쇼핑몰', tag: '모바일 커머스', img: asset('examples/site-02.svg') },
-  { name: '예약·문의', tag: '서비스 사이트', img: asset('examples/site-03.svg') },
-  { name: '포트폴리오', tag: '에이전시', img: asset('examples/site-04.svg') },
-  { name: '커뮤니티', tag: '회원·게시판', img: asset('examples/site-05.svg') },
-  { name: '브랜드 스토어', tag: '반응형 웹', img: asset('examples/site-06.svg') },
-  { name: '비즈니스', tag: '기업 홈페이지', img: asset('examples/site-07.svg') },
-  { name: '미디어', tag: '블로그·뉴스', img: asset('examples/site-08.svg') },
-  { name: '이벤트', tag: '랜딩 페이지', img: asset('examples/site-09.svg') },
-  { name: '카탈로그', tag: '제품 소개', img: asset('examples/site-10.svg') },
-  { name: '제품 소개', tag: '모바일 웹', img: asset('examples/site-11.svg') },
-  { name: '브랜드', tag: '반응형 웹', img: asset('examples/site-12.svg') },
+  { name: '기업 소개', tag: '반응형 웹', img: asset('examples/site-01.jpg') },
+  { name: '쇼핑몰', tag: '모바일 커머스', img: asset('examples/site-02.jpg') },
+  { name: '예약·문의', tag: '서비스 사이트', img: asset('examples/site-03.jpg') },
+  { name: '포트폴리오', tag: '에이전시', img: asset('examples/site-04.jpg') },
+  { name: '커뮤니티', tag: '회원·게시판', img: asset('examples/site-05.jpg') },
+  { name: '브랜드 스토어', tag: '반응형 웹', img: asset('examples/site-06.jpg') },
+  { name: '비즈니스', tag: '기업 홈페이지', img: asset('examples/site-07.jpg') },
+  { name: '미디어', tag: '블로그·뉴스', img: asset('examples/site-08.jpg') },
+  { name: '이벤트', tag: '랜딩 페이지', img: asset('examples/site-09.jpg') },
+  { name: '카탈로그', tag: '제품 소개', img: asset('examples/site-10.jpg') },
+  { name: '제품 소개', tag: '모바일 웹', img: asset('examples/site-11.jpg') },
+  { name: '브랜드', tag: '반응형 웹', img: asset('examples/site-12.jpg') },
 ]
 
 const templateLoop = computed(() => [...templates, ...templates])
