@@ -78,6 +78,9 @@ let spawnedCount = 0
 let nextSpawnAt = 0
 let lastTick = 0
 let dotAnimStart = 0
+let palsDrained = false
+let logoClickTimes: number[] = []
+const LOGO_TRIPLE_MS = 900
 
 function rand(min: number, max: number) {
   return min + Math.random() * (max - min)
@@ -112,11 +115,19 @@ function spawnPal(index: number, now: number) {
   state.caught = false
   state.x = origin.x
   state.y = origin.y
-  // shoot mostly upward from the enlarged dot, then arc out
-  state.vx = rand(-2.8, 2.8)
-  state.vy = rand(-10.5, -7.2)
-  state.rot = rand(-30, 30)
-  state.vr = rand(-6, 6)
+  if (palsDrained) {
+    // limp drop — already out of bounce energy
+    state.vx = rand(-1.2, 1.2)
+    state.vy = rand(0.4, 2.2)
+    state.rot = rand(-20, 20)
+    state.vr = rand(-2, 2)
+  } else {
+    // shoot mostly upward from the enlarged dot, then arc out
+    state.vx = rand(-2.8, 2.8)
+    state.vy = rand(-10.5, -7.2)
+    state.rot = rand(-30, 30)
+    state.vr = rand(-6, 6)
+  }
   state.scale = 0.06
   state.opacity = 0
   state.bornAt = now
@@ -306,6 +317,8 @@ function onPointerMove(event: PointerEvent) {
   mouse.y = event.clientY
   mouse.active = true
 
+  if (palsDrained) return
+
   // catch the nearest uncaught pal under the cursor (one at a time)
   let best = -1
   let bestDist = CATCH_RADIUS * CATCH_RADIUS
@@ -324,6 +337,29 @@ function onPointerMove(event: PointerEvent) {
     palState[best].vx = 0
     palState[best].vy = 0
   }
+}
+
+function drainPals() {
+  if (palsDrained) return
+  palsDrained = true
+  palsFollowing.value = false
+  palState.forEach((state) => {
+    if (!state.alive) return
+    state.caught = false
+    state.vx *= 0.35
+    state.vy = Math.max(0.2, state.vy * 0.2) + rand(0.8, 2.6)
+    state.vr *= 0.45
+  })
+}
+
+function onBrandClick() {
+  closeMenu()
+  const now = performance.now()
+  logoClickTimes = logoClickTimes.filter((t) => now - t < LOGO_TRIPLE_MS)
+  logoClickTimes.push(now)
+  if (logoClickTimes.length < 3) return
+  logoClickTimes = []
+  drainPals()
 }
 
 function onPointerLeave() {
@@ -347,6 +383,7 @@ function dismissPal(index: number) {
   // all cleared after a full round → spawn again one by one
   if (spawnedCount >= PAL_MAX && palState.every((s) => !s.alive)) {
     spawnedCount = 0
+    palsDrained = false
     const now = performance.now()
     syncDotAnimation(now)
     nextSpawnAt = now + DOT_PEAK_MS
@@ -418,7 +455,7 @@ function tickPals(now: number) {
       state.opacity += (1 - state.opacity) * 0.14
     }
 
-    if (state.caught && mouse.active) {
+    if (state.caught && mouse.active && !palsDrained) {
       const slot = followSlot
       followSlot += 1
       const angle = t * 0.9 + slot * ((Math.PI * 2) / Math.max(1, caughtTotal))
@@ -430,6 +467,43 @@ function tickPals(now: number) {
       state.y += (ty - state.y) * Math.min(0.35, lag * 3)
       state.rot += (Math.sin(t * 1.2 + i) * 5 - state.rot) * 0.08
       state.scale += (1 - state.scale) * 0.14
+    } else if (palsDrained) {
+      // limp physics — stronger gravity, no bounce boost, die on the floor
+      state.vy += 0.24 * dt
+      state.x += state.vx * dt
+      state.y += state.vy * dt
+      state.rot += state.vr * dt
+      state.vx *= 0.992
+      state.vr *= 0.985
+
+      if (state.x < pad) {
+        state.x = pad
+        state.vx = Math.abs(state.vx) * 0.35
+      } else if (state.x > maxX) {
+        state.x = maxX
+        state.vx = -Math.abs(state.vx) * 0.35
+      }
+      if (state.y < minY) {
+        state.y = minY
+        state.vy = Math.abs(state.vy) * 0.2
+      } else if (state.y > maxY) {
+        state.y = maxY
+        state.vy = -Math.abs(state.vy) * 0.28
+        state.vx *= 0.62
+        state.vr *= 0.55
+        if (Math.abs(state.vy) < 0.55) {
+          state.vy = 0
+          state.vx *= 0.82
+          state.vr *= 0.7
+        }
+      }
+
+      const settled = state.y >= maxY - 0.5 && Math.abs(state.vy) < 0.08
+      const restScale = settled ? 0.92 : 1
+      state.scale += (restScale - state.scale) * 0.12
+      if (settled) {
+        state.rot += (Math.round(state.rot / 15) * 15 - state.rot) * 0.08
+      }
     } else {
       // lighter gravity while launching upward, then normal bounce
       state.vy += (launching ? 0.028 : 0.055) * dt
@@ -610,6 +684,8 @@ onMounted(() => {
       ? Array.from(palsRoot.value.querySelectorAll<HTMLElement>('.cursor-pal'))
       : []
     spawnedCount = 0
+    palsDrained = false
+    logoClickTimes = []
     lastTick = performance.now()
     syncDotAnimation(lastTick)
     nextSpawnAt = dotAnimStart + DOT_PEAK_MS
@@ -697,7 +773,7 @@ onUnmounted(() => {
 
     <!-- ===== KEEP: header ===== -->
     <header class="nav on-hero" :class="{ 'is-down': scrolled }">
-      <a class="brand" href="#top" @click="closeMenu" aria-label="모든시스템즈">
+      <a class="brand" href="#top" @click="onBrandClick" aria-label="모든시스템즈">
         moden<span ref="brandDotRef" class="brand-dot">.</span
         ><span class="brand-sub">systems</span>
       </a>
