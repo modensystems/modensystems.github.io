@@ -346,9 +346,10 @@ function drainPals() {
   palState.forEach((state) => {
     if (!state.alive) return
     state.caught = false
-    state.vx *= 0.35
-    state.vy = Math.max(0.2, state.vy * 0.2) + rand(0.8, 2.6)
-    state.vr *= 0.45
+    // cut bounce energy and tip them downward
+    state.vx = state.vx * 0.25 + rand(-1.4, 1.4)
+    state.vy = Math.abs(state.vy) * 0.15 + rand(2.5, 5.5)
+    state.vr = rand(-4, 4)
   })
 }
 
@@ -391,7 +392,16 @@ function dismissPal(index: number) {
 }
 
 function onPalClick(event: MouseEvent) {
-  // pals use pointer-events:none so hit-test by distance
+  // don't steal clicks meant for UI (logo triple-click, links, buttons)
+  const target = event.target
+  if (
+    target instanceof Element &&
+    target.closest('a, button, input, textarea, select, label, .consult-panel')
+  ) {
+    return
+  }
+
+  // icons use pointer-events:none so hit-test by distance
   let best = -1
   let bestDist = CATCH_RADIUS * CATCH_RADIUS
   palState.forEach((state, i) => {
@@ -468,41 +478,42 @@ function tickPals(now: number) {
       state.rot += (Math.sin(t * 1.2 + i) * 5 - state.rot) * 0.08
       state.scale += (1 - state.scale) * 0.14
     } else if (palsDrained) {
-      // limp physics — stronger gravity, no bounce boost, die on the floor
-      state.vy += 0.24 * dt
+      // limp fall — heavy gravity, weak floor bounce, then rest
+      state.vy += 0.42 * dt
       state.x += state.vx * dt
       state.y += state.vy * dt
       state.rot += state.vr * dt
-      state.vx *= 0.992
-      state.vr *= 0.985
+      state.vx *= 0.988
+      state.vr *= 0.98
 
       if (state.x < pad) {
         state.x = pad
-        state.vx = Math.abs(state.vx) * 0.35
+        state.vx = Math.abs(state.vx) * 0.25
       } else if (state.x > maxX) {
         state.x = maxX
-        state.vx = -Math.abs(state.vx) * 0.35
+        state.vx = -Math.abs(state.vx) * 0.25
       }
       if (state.y < minY) {
         state.y = minY
-        state.vy = Math.abs(state.vy) * 0.2
+        state.vy = Math.abs(state.vy) * 0.12
       } else if (state.y > maxY) {
         state.y = maxY
-        state.vy = -Math.abs(state.vy) * 0.28
-        state.vx *= 0.62
-        state.vr *= 0.55
-        if (Math.abs(state.vy) < 0.55) {
+        state.vy = -Math.abs(state.vy) * 0.18
+        state.vx *= 0.55
+        state.vr *= 0.4
+        if (Math.abs(state.vy) < 1.1) {
           state.vy = 0
-          state.vx *= 0.82
-          state.vr *= 0.7
+          state.vx *= 0.75
+          state.vr *= 0.5
         }
       }
 
-      const settled = state.y >= maxY - 0.5 && Math.abs(state.vy) < 0.08
-      const restScale = settled ? 0.92 : 1
-      state.scale += (restScale - state.scale) * 0.12
+      const settled = state.y >= maxY - 0.5 && Math.abs(state.vy) < 0.05
+      const restScale = settled ? 0.9 : 1
+      state.scale += (restScale - state.scale) * 0.14
       if (settled) {
-        state.rot += (Math.round(state.rot / 15) * 15 - state.rot) * 0.08
+        state.vx *= 0.9
+        state.rot += (Math.round(state.rot / 20) * 20 - state.rot) * 0.12
       }
     } else {
       // lighter gravity while launching upward, then normal bounce
