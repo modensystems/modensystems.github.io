@@ -17,47 +17,44 @@ const brandDotRef = ref<HTMLElement | null>(null)
 
 const PAL_KINDS = [
   'star',
-  'spark',
-  'blob',
-  'chick',
-  'cloud',
-  'moon',
-  'candy',
-  'bow',
   'heart',
+  'spark',
+  'circle',
+  'moon',
+  'bolt',
+  'diamond',
+  'triangle',
+  'square',
   'ring',
 ] as const
 type PalKind = (typeof PAL_KINDS)[number]
 const PAL_MAX = PAL_KINDS.length
 
 const PAL_SIZES: Record<PalKind, number> = {
-  star: 30,
-  spark: 22,
-  blob: 26,
-  chick: 26,
-  cloud: 28,
-  moon: 24,
-  candy: 24,
-  bow: 26,
+  star: 28,
   heart: 24,
-  ring: 22,
+  spark: 22,
+  circle: 22,
+  moon: 24,
+  bolt: 22,
+  diamond: 24,
+  triangle: 24,
+  square: 22,
+  ring: 24,
 }
 
 const PAL_PATHS: Record<PalKind, string> = {
   star: 'M12 2.4l2.7 6.2 6.7.7-5 4.5 1.4 6.6L12 17.4 6.2 20.4l1.4-6.6-5-4.5 6.7-.7L12 2.4z',
-  spark: 'M12 1l1.6 7.4L21 10l-7.4 1.6L12 19l-1.6-7.4L3 10l7.4-1.6L12 1z',
-  blob: 'M12 3c3.2 0 6 2.2 6.7 5.2.9-.3 1.9.1 2.3 1 1.1 2.3-.4 5.1-2.8 6.1-1 2.8-3.7 4.7-6.7 4.7-4.1 0-7.5-3.2-7.5-7.2C4 7.8 7.5 3 12 3z',
-  chick:
-    'M17.2 6.8a2.4 2.4 0 0 0-3.4-3.2A6.4 6.4 0 0 0 5.8 9.8c0 2.7 1.6 5 3.9 6L8.8 20h2.2l.7-2.3h.6l.7 2.3H15l-1-4.2c2.1-.9 3.5-3 3.5-5.4 0-1.2-.3-2.3-.8-3.3zm-6.4 2a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zm3.5 0a1.15 1.15 0 1 1 0 2.3 1.15 1.15 0 0 1 0-2.3zM19.2 9.1l-2.6.9 2.6.9.9-1.8-.9z',
-  cloud:
-    'M8.2 18.5h9.2c2.6 0 4.6-1.9 4.6-4.2s-2-4.2-4.6-4.2c-.3 0-.6 0-.9.1A5.3 5.3 0 0 0 7.2 7.8 5.1 5.1 0 0 0 2.2 13c0 3 2.5 5.5 6 5.5z',
-  moon: 'M15.4 2.2A8.8 8.8 0 1 0 21.8 14 7.2 7.2 0 0 1 15.4 2.2z',
-  candy:
-    'M8.2 9.4 4.6 5.8l1.6-1.6 3.6 3.6a4.2 4.2 0 0 1 5.9 5.9l3.6 3.6-1.6 1.6-3.6-3.6a4.2 4.2 0 0 1-5.9-5.9zm3 1.2a2 2 0 1 0 2.8 2.8 2 2 0 0 0-2.8-2.8z',
-  bow: 'M12 10.2 7.2 7.4C5.4 6.4 3.2 7.7 3.2 9.8c0 1.3.8 2.2 2 2.6L12 14.8l6.8-2.4c1.2-.4 2-1.3 2-2.6 0-2.1-2.2-3.4-4-2.4L12 10.2zm0 5.2-4.4 5.2h2.6L12 17.8l1.8 2.8h2.6L12 15.4z',
   heart:
     'M12 20.4S3.6 14.8 3.6 9.7A4.4 4.4 0 0 1 12 7.2a4.4 4.4 0 0 1 8.4 2.5c0 5.1-8.4 10.7-8.4 10.7z',
-  ring: 'M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6zm0 2.6a5.2 5.2 0 1 1 0 10.4 5.2 5.2 0 0 1 0-10.4z',
+  spark: 'M12 1.5l1.5 7.2L21 10l-7.5 1.3L12 18.5l-1.5-7.2L3 10l7.5-1.3L12 1.5z',
+  circle: 'M12 3.2a8.8 8.8 0 1 0 0 17.6 8.8 8.8 0 0 0 0-17.6z',
+  moon: 'M15.4 2.2A8.8 8.8 0 1 0 21.8 14 7.2 7.2 0 0 1 15.4 2.2z',
+  bolt: 'M13.2 2.4 5.4 13.2h5.1l-1.5 8.4 9-12h-5.4l1.6-7.2z',
+  diamond: 'M12 2.8 20.5 12 12 21.2 3.5 12 12 2.8z',
+  triangle: 'M12 3.2 21.2 20.2H2.8L12 3.2z',
+  square: 'M5 5h14v14H5z',
+  ring: 'M12 4.2a7.8 7.8 0 1 0 0 15.6 7.8 7.8 0 0 0 0-15.6zm0 2.8a5 5 0 1 1 0 10 5 5 0 0 1 0-10z',
 }
 
 const cursorPals = PAL_KINDS.map((kind, i) => ({
@@ -1003,32 +1000,32 @@ onUnmounted(() => {
 .cursor-pal.is-star {
   color: #fee500;
 }
+.cursor-pal.is-heart {
+  color: #ff5a7a;
+}
 .cursor-pal.is-spark {
-  color: #f5a623;
+  color: #ff8a3d;
 }
-.cursor-pal.is-blob {
-  color: #191919;
-}
-.cursor-pal.is-chick {
-  color: #f5c518;
-}
-.cursor-pal.is-cloud {
-  color: #d6d0c8;
+.cursor-pal.is-circle {
+  color: #3b82f6;
 }
 .cursor-pal.is-moon {
-  color: #c4b5a5;
+  color: #8b5cf6;
 }
-.cursor-pal.is-candy {
-  color: #e8a87c;
+.cursor-pal.is-bolt {
+  color: #06b6d4;
 }
-.cursor-pal.is-bow {
-  color: #d4a017;
+.cursor-pal.is-diamond {
+  color: #22c55e;
 }
-.cursor-pal.is-heart {
-  color: #fb7185;
+.cursor-pal.is-triangle {
+  color: #f43f5e;
+}
+.cursor-pal.is-square {
+  color: #191919;
 }
 .cursor-pal.is-ring {
-  color: #f0b429;
+  color: #f59e0b;
 }
 .cursor-pal.is-follow {
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.08));
