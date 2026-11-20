@@ -10,3 +10,9 @@ npm run dev
 ```
 
 기본 주소: http://localhost:5174
+
+## 배포
+
+`main` 푸시 시 GitHub Actions가 빌드 후 GitHub Pages로 배포합니다.
+
+- 사이트: https://swcenter.github.io/mdsys/
