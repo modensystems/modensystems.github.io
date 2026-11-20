@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
+/** Public assets under Vite `base` (e.g. /mdsys/ on GitHub Pages). */
+function asset(path: string) {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
+}
+
 const menuOpen = ref(false)
 const scrolled = ref(false)
 const ready = ref(false)
@@ -79,19 +84,19 @@ const brands = [
     title: '스마트폰에서도 잘 보이는 반응형 홈페이지',
     name: '기업·매장 사이트',
     cat: '반응형 모바일 웹',
-    img: '/work/responsive.jpg',
+    img: asset('work/responsive.jpg'),
   },
   {
     title: '콘텐츠·문의·예약을 한곳에서 관리',
     name: '운영 어드민',
     cat: '관리자·백오피스',
-    img: '/work/admin.jpg',
+    img: asset('work/admin.jpg'),
   },
   {
     title: '오픈 이후 수정·운영까지 함께',
     name: '유지보수',
     cat: '홈페이지 운영',
-    img: '/work/care.jpg',
+    img: asset('work/care.jpg'),
   },
 ]
 
@@ -100,19 +105,19 @@ const easyFeatures = [
     title: '반응형 모바일 웹',
     lines: ['PC·태블릿·스마트폰에서', '자연스럽게 보이는 사이트 제작'],
     tone: 'design',
-    img: '/service/responsive.jpg',
+    img: asset('service/responsive.jpg'),
   },
   {
     title: '홈페이지 제작·운영',
     lines: ['기획부터 디자인·개발·오픈까지', '이후 수정·유지보수까지 함께'],
     tone: 'ops',
-    img: '/service/build.jpg',
+    img: asset('service/build.jpg'),
   },
   {
     title: '운영·유지보수',
     lines: ['콘텐츠 수정과 페이지 추가,', '오픈 이후 운영까지 함께합니다'],
     tone: 'mkt',
-    img: '/service/care.jpg',
+    img: asset('service/care.jpg'),
   },
 ]
 
