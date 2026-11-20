@@ -79,8 +79,6 @@ let nextSpawnAt = 0
 let lastTick = 0
 let dotAnimStart = 0
 let palsDrained = false
-let logoClickTimes: number[] = []
-const LOGO_TRIPLE_MS = 900
 
 function rand(min: number, max: number) {
   return min + Math.random() * (max - min)
@@ -355,11 +353,11 @@ function drainPals() {
 
 function onBrandClick() {
   closeMenu()
-  const now = performance.now()
-  logoClickTimes = logoClickTimes.filter((t) => now - t < LOGO_TRIPLE_MS)
-  logoClickTimes.push(now)
-  if (logoClickTimes.length < 3) return
-  logoClickTimes = []
+}
+
+function onBrandDblClick(event: MouseEvent) {
+  event.preventDefault()
+  closeMenu()
   drainPals()
 }
 
@@ -696,7 +694,6 @@ onMounted(() => {
       : []
     spawnedCount = 0
     palsDrained = false
-    logoClickTimes = []
     lastTick = performance.now()
     syncDotAnimation(lastTick)
     nextSpawnAt = dotAnimStart + DOT_PEAK_MS
@@ -773,7 +770,7 @@ onUnmounted(() => {
       aria-hidden="true"
     >
       <div
-        v-for="(pal, i) in cursorPals"
+        v-for="pal in cursorPals"
         :key="pal.id"
         class="cursor-pal"
         :style="{ width: `${pal.size}px`, height: `${pal.size}px` }"
@@ -784,7 +781,13 @@ onUnmounted(() => {
 
     <!-- ===== KEEP: header ===== -->
     <header class="nav on-hero" :class="{ 'is-down': scrolled }">
-      <a class="brand" href="#top" @click="onBrandClick" aria-label="모든시스템즈">
+      <a
+        class="brand"
+        href="#top"
+        @click="onBrandClick"
+        @dblclick="onBrandDblClick"
+        aria-label="모든시스템즈"
+      >
         moden<span ref="brandDotRef" class="brand-dot">.</span
         ><span class="brand-sub">systems</span>
       </a>
