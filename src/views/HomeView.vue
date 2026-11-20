@@ -353,6 +353,23 @@ function dismissPal(index: number) {
   }
 }
 
+function onPalClick(event: MouseEvent) {
+  // pals use pointer-events:none so hit-test by distance
+  let best = -1
+  let bestDist = CATCH_RADIUS * CATCH_RADIUS
+  palState.forEach((state, i) => {
+    if (!state.alive) return
+    const dx = state.x - event.clientX
+    const dy = state.y - event.clientY
+    const d2 = dx * dx + dy * dy
+    if (d2 < bestDist) {
+      bestDist = d2
+      best = i
+    }
+  })
+  if (best >= 0) dismissPal(best)
+}
+
 function tickPals(now: number) {
   const dt = Math.min(34, now - (lastTick || now)) / 16.67
   lastTick = now
@@ -599,6 +616,7 @@ onMounted(() => {
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerleave', onPointerLeave)
     document.documentElement.addEventListener('mouseleave', onPointerLeave)
+    window.addEventListener('click', onPalClick)
     palsRaf = window.requestAnimationFrame(tickPals)
   }
 
@@ -647,6 +665,7 @@ onUnmounted(() => {
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerleave', onPointerLeave)
   document.documentElement.removeEventListener('mouseleave', onPointerLeave)
+  window.removeEventListener('click', onPalClick)
   window.cancelAnimationFrame(palsRaf)
   window.clearTimeout(menuCloseTimer)
   window.clearInterval(heroTimer)
@@ -671,7 +690,6 @@ onUnmounted(() => {
         :key="pal.id"
         class="cursor-pal"
         :style="{ width: `${pal.size}px`, height: `${pal.size}px` }"
-        @click.stop.prevent="dismissPal(i)"
       >
         <img :src="pal.src" alt="" draggable="false" />
       </div>
@@ -1134,8 +1152,7 @@ onUnmounted(() => {
   will-change: transform, opacity;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.12));
   transition: filter 0.3s ease;
-  pointer-events: auto;
-  cursor: default;
+  pointer-events: none;
 }
 .cursor-pals.follow .cursor-pal {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
