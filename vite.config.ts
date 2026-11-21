@@ -5,22 +5,16 @@ import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig, type Plugin } from 'vite'
 
-/** Project Pages (swcenter) vs org root Pages (modensystems.github.io). */
+/** Official public URL for search / canonical (always). */
+const OFFICIAL_SITE = 'https://modensystems.github.io'
+
+/** Asset base path differs by host; SEO always points at the official site. */
 function resolveSite() {
   const repo = process.env.GITHUB_REPOSITORY || ''
   const isOrgSite = repo.endsWith('.github.io') || process.env.VITE_SITE === 'moden'
-
-  if (process.env.VITE_BASE || process.env.VITE_SITE_URL) {
-    const siteUrl = (process.env.VITE_SITE_URL || 'https://swcenter.github.io/mdsys').replace(/\/$/, '')
-    const base = process.env.VITE_BASE || (isOrgSite ? '/' : '/mdsys/')
-    return { base, siteUrl }
-  }
-
-  if (isOrgSite) {
-    return { base: '/', siteUrl: 'https://modensystems.github.io' }
-  }
-
-  return { base: '/mdsys/', siteUrl: 'https://swcenter.github.io/mdsys' }
+  const base = process.env.VITE_BASE || (isOrgSite ? '/' : '/mdsys/')
+  const siteUrl = (process.env.VITE_SITE_URL || OFFICIAL_SITE).replace(/\/$/, '')
+  return { base, siteUrl }
 }
 
 const { base, siteUrl } = resolveSite()
@@ -30,7 +24,16 @@ function seoSitePlugin(): Plugin {
   return {
     name: 'seo-site-url',
     transformIndexHtml(html) {
-      return html.replaceAll('https://swcenter.github.io/mdsys', siteUrl)
+      let out = html
+        .replaceAll('https://swcenter.github.io/mdsys', siteUrl)
+        .replaceAll('https://modensystems.github.io', siteUrl)
+      // old mirror should not compete — point search at the official host
+      if (base !== '/') {
+        out = out
+          .replaceAll('content="index, follow"', 'content="noindex, follow"')
+          .replaceAll('name="googlebot" content="index, follow"', 'name="googlebot" content="noindex, follow"')
+      }
+      return out
     },
     writeBundle(options) {
       const outDir = options.dir

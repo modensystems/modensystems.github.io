@@ -7,4 +7,4 @@ Allow: /
 User-agent: Googlebot
 Allow: /
 
-Sitemap: https://swcenter.github.io/mdsys/sitemap.xml
+Sitemap: https://modensystems.github.io/sitemap.xml
