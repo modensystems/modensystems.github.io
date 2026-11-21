@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -27,15 +27,22 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # swcenter/mdsys → /mdsys/; modensystems.github.io → /
           GITHUB_REPOSITORY: ${{ github.repository }}
       - name: SPA fallback for GitHub Pages
         run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
+        if: ${{ !endsWith(github.repository, '.github.io') }}
         with:
           path: dist
+      - uses: actions/upload-artifact@v4
+        if: ${{ endsWith(github.repository, '.github.io') }}
+        with:
+          name: site-dist
+          path: dist
 
+  # Project Pages (swcenter/mdsys → /mdsys/)
   deploy:
+    if: ${{ !endsWith(github.repository, '.github.io') }}
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -44,3 +51,19 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Org user site (modensystems.github.io → /)
+  deploy-user-site:
+    if: ${{ endsWith(github.repository, '.github.io') }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: dist
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
