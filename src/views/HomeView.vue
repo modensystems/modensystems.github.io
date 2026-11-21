@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
-/** Public assets under Vite `base` (e.g. /mdsys/ on GitHub Pages). */
+/** Public assets under Vite `base` (/ or /mdsys/ depending on deploy target). */
 function asset(path: string) {
   return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 }

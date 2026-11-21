@@ -15,4 +15,7 @@ npm run dev
 
 `main` 푸시 시 GitHub Actions가 빌드 후 GitHub Pages로 배포합니다.
 
-- 사이트: https://swcenter.github.io/mdsys/
+- https://modensystems.github.io/ (공식)
+- https://swcenter.github.io/mdsys/ (기존 미러)
+
+저장소별로 `base`·SEO URL이 자동으로 맞춰집니다.

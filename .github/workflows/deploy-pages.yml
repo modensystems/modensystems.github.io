@@ -24,7 +24,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Build
+        run: npm run build
+        env:
+          # swcenter/mdsys → /mdsys/; modensystems.github.io → /
+          GITHUB_REPOSITORY: ${{ github.repository }}
       - name: SPA fallback for GitHub Pages
         run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
