@@ -14,8 +14,7 @@ const router = createRouter({
       component: HomeView,
       meta: {
         title: DEFAULT_TITLE,
-        description:
-          '모든시스템즈(moden.systems) — 부산 기반 반응형 모바일 웹·홈페이지 제작 전문. 기업·매장 사이트, 관리자 페이지, 제작·운영·유지보수까지.',
+        description: '부산 반응형 웹·홈페이지 제작 전문. 기획·제작부터 운영·유지보수까지.',
       },
     },
     {
@@ -40,7 +39,7 @@ router.afterEach((to) => {
   const description =
     typeof to.meta.description === 'string'
       ? to.meta.description
-      : '모든시스템즈 — 반응형 모바일 웹·홈페이지 제작 전문.'
+      : '부산 반응형 웹·홈페이지 제작 전문. 기획·제작부터 운영·유지보수까지.'
   let descTag = document.querySelector('meta[name="description"]')
   if (!descTag) {
     descTag = document.createElement('meta')
