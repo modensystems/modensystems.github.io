@@ -3,9 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import PrivacyView from '@/views/PrivacyView.vue'
 
-const DEFAULT_TITLE = '모든시스템즈 | 부산 반응형 홈페이지·모바일 웹 제작'
+const DEFAULT_TITLE = '모든시스템즈 | 반응형 홈페이지·모바일 웹 제작'
 const DEFAULT_DESCRIPTION =
-  '모든시스템즈 · 부산 반응형 홈페이지·모바일 웹 제작·유지보수.'
+  '모든시스템즈 · 반응형 홈페이지·모바일 웹 제작·운영·유지보수.'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
