@@ -891,7 +891,7 @@ onUnmounted(() => {
       <!-- HERO -->
       <section class="hero" aria-label="회사 소개">
         <div class="hero-copy hero-pop">
-          <p class="hero-kicker">반응형 모바일 웹 제작 전문</p>
+          <p class="hero-kicker">부산 반응형 홈페이지·모바일 웹 제작</p>
           <h1 class="hero-title">
             <span class="hero-rotator" aria-live="polite">
               <span
@@ -906,8 +906,8 @@ onUnmounted(() => {
             <span>홈페이지</span>
           </h1>
           <p class="hero-sub">
-            모든시스템즈는 스마트폰에서도 잘 보이는<br />
-            반응형 웹·홈페이지를 기획부터 제작·운영까지 맡는 제작사입니다.
+            모든시스템즈는 부산에서 반응형 홈페이지·모바일 웹을<br />
+            기획부터 웹사이트 제작·운영·유지보수까지 맡는 제작사입니다.
           </p>
           <div class="hero-actions">
             <a class="btn-start" href="#consult" @click="openConsult">상담 문의</a>
@@ -1028,11 +1028,11 @@ onUnmounted(() => {
           <div class="about-copy bounce-in">
             <p class="about-kicker">About</p>
             <h2>
-              반응형 모바일 웹을 전문으로 하는<br />웹 제작사, 모든시스템즈
+              부산 반응형 홈페이지·모바일 웹 제작,<br />모든시스템즈
             </h2>
             <p>
-              반응형 모바일 웹을 중심으로 홈페이지 제작·운영과
-              관리자 페이지, 오픈 이후 수정·유지보수를 함께합니다.
+              반응형 웹·홈페이지 제작과 관리자 페이지,
+              오픈 이후 수정·유지보수·운영까지 함께합니다.
             </p>
             <a class="btn-start" :href="`mailto:${contact.email}`">이메일로 문의하기</a>
           </div>

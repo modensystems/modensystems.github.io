@@ -3,7 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import PrivacyView from '@/views/PrivacyView.vue'
 
-const DEFAULT_TITLE = '모든시스템즈 | 반응형 모바일 웹·홈페이지 제작'
+const DEFAULT_TITLE = '모든시스템즈 | 부산 반응형 홈페이지·모바일 웹 제작'
+const DEFAULT_DESCRIPTION =
+  '모든시스템즈 · 부산 반응형 홈페이지·모바일 웹 제작·유지보수.'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +16,7 @@ const router = createRouter({
       component: HomeView,
       meta: {
         title: DEFAULT_TITLE,
-        description: '부산 반응형 웹·홈페이지 제작 전문. 기획·제작부터 운영·유지보수까지.',
+        description: DEFAULT_DESCRIPTION,
       },
     },
     {
@@ -39,7 +41,7 @@ router.afterEach((to) => {
   const description =
     typeof to.meta.description === 'string'
       ? to.meta.description
-      : '부산 반응형 웹·홈페이지 제작 전문. 기획·제작부터 운영·유지보수까지.'
+      : DEFAULT_DESCRIPTION
   let descTag = document.querySelector('meta[name="description"]')
   if (!descTag) {
     descTag = document.createElement('meta')
